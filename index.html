@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kathara Spiral with Colored Mirrors</title>
+  <style>
+    body { text-align: center; font-family: Arial, sans-serif; background: #1a1a1a; }
+    /* Canvas is 100% width on mobile, 50% on desktop */
+    canvas { 
+      border: 1px solid #444; 
+      background: transparent; /* Changed from #111 to transparent for dynamic background */
+      margin: 10px; 
+      width: 100%; 
+      height: auto; 
+    }
+    @media (min-width: 768px) {
+      canvas { width: 50%; }
+    }
+    .controls { 
+      margin: 10px; 
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .control-group { border: 1px solid #444; padding: 10px; }
+    label { display: block; margin: 5px 0; }
+    input[type="range"] { width: 120px; }
+    /* Additional styles for mirror color controls */
+    .mirror-colors { margin-top: 5px; }
+    .mirror-colors label { display: inline-block; margin: 0 10px; }
+    /* Basic styling for the download button */
+    .download-container { margin-top: 20px; }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      background: #00aced;
+      color: #fff;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #0084b4;
+    }
+  </style>
+</head>
+<body>
+  <h2>Enhanced Kathara Spiral Generator</h2>
+  <canvas id="spiralCanvas"></canvas>
+  
+  <div class="controls">
+    <div class="control-group">
+      <h3>Core Parameters</h3>
+      <label>Scale: <input type="range" id="scale" min="1" max="100" value="30"> <span id="scaleValue">30</span></label>
+      <label>Nodes: <input type="range" id="nodes" min="5" max="720" value="12"> <span id="nodesValue">12</span></label>
+      <label>Rotation: <input type="range" id="rotation" min="0" max="360" value="0"> <span id="rotationValue">0</span></label>
+      <label>Auto-Rotate: <input type="checkbox" id="autoRotate"></label> <!-- New Feature: Auto-Rotate Toggle -->
+    </div>
+
+    <div class="control-group">
+      <h3>Layer Controls</h3>
+      <label>Layers: <input type="range" id="layers" min="1" max="300" value="3"> <span id="layersValue">3</span></label>
+      <label>Layer Ratio: 
+        <input type="range" id="layerRatio" min="0.1" max="10" step="0.1" value="2">
+        <input type="number" id="layerRatioNumber" min="0.1" max="10" step="0.1" value="2" style="width: 60px;">
+      </label>
+      <div>
+        <button onclick="setRatio(1.618)">Golden Ratio</button>
+        <button onclick="setRatio(2.414)">Silver Ratio</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Mirror Effects</h3>
+      <label><input type="checkbox" id="verticalMirror"> Vertical Mirror</label>
+      <label><input type="checkbox" id="horizontalMirror"> Horizontal Mirror</label>
+      <div class="mirror-colors">
+        <label>Vertical Color: <input type="color" id="verticalColor" value="#FF00FF"></label>
+        <label>Horizontal Color: <input type="color" id="horizontalColor" value="#FFFF00"></label>
+        <label>Both Color: <input type="color" id="bothColor" value="#FFFFFF"></label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Style Options</h3>
+      <label>Color: <input type="color" id="strokeColor" value="#00FFFF"></label>
+      <label>Line Width: <input type="range" id="lineWidth" min="1" max="10" value="2"> <span id="lineWidthValue">2</span></label>
+      <label>Opacity: <input type="range" id="opacity" min="0" max="1" step="0.1" value="1"> <span id="opacityValue">1</span></label>
+      <label>Spiral Type: 
+        <select id="spiralType">
+          <option value="linear">Linear</option>
+          <option value="logarithmic">Logarithmic</option>
+        </select>
+      </label> <!-- New Feature: Spiral Type Selector -->
+      <label>Background Color: <input type="color" id="backgroundColor" value="#111111"></label> <!-- New Feature: Background Color Picker -->
+    </div>
+  </div>
+
+  <div class="download-container">
+    <button onclick="downloadCanvas()">Download Image (2160×2160)</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('spiralCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // -------------------------------
+    // Responsive Canvas Setup
+    // -------------------------------
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientWidth; // Maintain a square canvas
+      drawSpiral();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // -------------------------------
+    // Spiral Drawing Functions
+    // -------------------------------
+    function drawSpiralOnContext(context, width, height) {
+      const backgroundColor = document.getElementById('backgroundColor').value;
+      context.fillStyle = backgroundColor;
+      context.fillRect(0, 0, width, height); // Set dynamic background color
+
+      context.save();
+      
+      // Get control values
+      const params = {
+        scale: parseFloat(document.getElementById('scale').value),
+        nodes: parseInt(document.getElementById('nodes').value),
+        rotation: parseFloat(document.getElementById('rotation').value),
+        layers: parseInt(document.getElementById('layers').value),
+        layerRatio: parseFloat(document.getElementById('layerRatio').value),
+        verticalMirror: document.getElementById('verticalMirror').checked,
+        horizontalMirror: document.getElementById('horizontalMirror').checked,
+        strokeColor: document.getElementById('strokeColor').value,
+        lineWidth: parseFloat(document.getElementById('lineWidth').value),
+        opacity: parseFloat(document.getElementById('opacity').value),
+        verticalColor: document.getElementById('verticalColor').value,
+        horizontalColor: document.getElementById('horizontalColor').value,
+        bothColor: document.getElementById('bothColor').value
+      };
+      
+      context.lineWidth = params.lineWidth;
+      context.globalAlpha = params.opacity;
+      
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      for (let l = 0; l < params.layers; l++) {
+        const currentScale = params.scale * (l + 1) * (params.layerRatio / 10);
+        const initialAngle = (params.rotation + (l * 10)) * (Math.PI / 180);
+  
+        // Draw original spiral
+        drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, false, false, params.strokeColor);
+  
+        // Draw mirrored spirals with custom colors
+        if (params.verticalMirror || params.horizontalMirror) {
+          if (params.verticalMirror && params.horizontalMirror) {
+            drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, true, true, params.bothColor);
+          }
+          if (params.verticalMirror) {
+            drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, true, false, params.verticalColor);
+          }
+          if (params.horizontalMirror) {
+            drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, false, true, params.horizontalColor);
+          }
+        }
+      }
+      context.restore();
+    }
+    
+    function drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, mirrorX, mirrorY, color) {
+      context.beginPath();
+      context.strokeStyle = color;
+      let angle = initialAngle;
+      const spiralType = document.getElementById('spiralType').value; // Get selected spiral type
+      
+      for (let i = 0; i < params.nodes; i++) {
+        let r;
+        if (spiralType === 'linear') {
+          r = currentScale * i; // Linear radius increase
+        } else if (spiralType === 'logarithmic') {
+          r = currentScale * Math.exp(0.1 * i); // Logarithmic radius increase
+        }
+        let x = centerX + Math.cos(angle) * r;
+        let y = centerY + Math.sin(angle) * r;
+  
+        if (mirrorX) x = centerX * 2 - x;
+        if (mirrorY) y = centerY * 2 - y;
+  
+        context.lineTo(x, y);
+        angle += Math.PI / 3;
+      }
+      context.stroke();
+    }
+    
+    // Draw the spiral on the main canvas
+    function drawSpiral() {
+      drawSpiralOnContext(ctx, canvas.width, canvas.height);
+    }
+    
+    // -------------------------------
+    // Preset Ratio and Input Sync
+    // -------------------------------
+    function setRatio(ratio) {
+      document.getElementById('layerRatio').value = ratio;
+      document.getElementById('layerRatioNumber').value = ratio;
+      drawSpiral();
+    }
+    
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', function() {
+        // Update linked number inputs
+        if (this.type === 'range') {
+          const numberInput = document.getElementById(this.id + 'Number');
+          if (numberInput) numberInput.value = this.value;
+        }
+        // Update value displays
+        const valueSpan = document.getElementById(this.id + 'Value');
+        if (valueSpan) valueSpan.textContent = this.value;
+        drawSpiral();
+      });
+    });
+    
+    // Specific listener for spiral type change
+    document.getElementById('spiralType').addEventListener('change', drawSpiral);
+    
+    // -------------------------------
+    // Auto-Rotate Animation
+    // -------------------------------
+    let isAnimating = false;
+    
+    function animateRotation() {
+      if (isAnimating) {
+        let rotationInput = document.getElementById('rotation');
+        let currentRotation = parseFloat(rotationInput.value);
+        currentRotation = (currentRotation + 1) % 360; // Increment by 1 degree per frame
+        rotationInput.value = currentRotation;
+        document.getElementById('rotationValue').textContent = Math.round(currentRotation);
+        drawSpiral();
+        requestAnimationFrame(animateRotation); // Schedule next frame
+      }
+    }
+    
+    document.getElementById('autoRotate').addEventListener('change', function() {
+      isAnimating = this.checked;
+      if (isAnimating) {
+        animateRotation(); // Start animation if checked
+      }
+    });
+    
+    // -------------------------------
+    // Download Function (2160x2160)
+    // -------------------------------
+    function downloadCanvas() {
+      // Create an offscreen canvas for high-resolution download
+      const downloadCanvas = document.createElement('canvas');
+      downloadCanvas.width = 2160;
+      downloadCanvas.height = 2160;
+      const downloadCtx = downloadCanvas.getContext('2d');
+      
+      // Draw the spiral at 2160x2160 resolution
+      drawSpiralOnContext(downloadCtx, downloadCanvas.width, downloadCanvas.height);
+      
+      const link = document.createElement('a');
+      link.download = 'kathara-spiral.png';
+      link.href = downloadCanvas.toDataURL();
+      link.click();
+    }
+    
+    // Initial draw
+    drawSpiral();
+  </script>
+</body>
+</html>
