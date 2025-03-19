@@ -1,27 +1,29 @@
 # Kathara Spiral with Colored Mirrors
 
-An interactive web-based spiral generator that creates mesmerizing Kathara-inspired spiral patterns with customizable parameters and mirror effects. Built with HTML, CSS, and JavaScript, this project allows users to experiment with spirals, layers, mirroring, and colors, and even download high-resolution images of their creations.
+An interactive web-based spiral generator that creates mesmerizing Kathara-inspired spiral patterns with customizable parameters and mirror effects. Built with HTML, CSS, and JavaScript, this project allows users to experiment with spirals, layers, mirroring, and colors, and download high-resolution images of their creations.
 
 **[Live Demo](https://jasonbra1n.github.io/kathara-spiral/)** | **[Repository](https://github.com/jasonbra1n/kathara-spiral)**
 
 ## Features
 
-- **Customizable Spirals**: Adjust scale, number of nodes, rotation, and spiral type (linear or logarithmic).
-- **Layer Controls**: Add multiple layers with adjustable ratios, including presets for Golden Ratio (1.618) and Silver Ratio (2.414).
+- **Customizable Spirals**: Adjust scale (1-100), nodes (5-50), rotation (0-360°), and spiral type (linear or logarithmic).
+- **Layer Controls**: Add up to 100 layers with adjustable ratios, including presets for Golden Ratio (1.618) and Silver Ratio (2.414).
 - **Mirror Effects**: Enable vertical and/or horizontal mirroring with distinct color options for each.
-- **Style Options**: Modify stroke color, line width, opacity, and background color.
+- **Style Options**: Modify stroke color, line width (1-10), opacity (0-1), background color, gradient strokes, and dashed lines.
 - **Auto-Rotation**: Toggle continuous spiral rotation for dynamic visuals.
+- **Presets**: Choose from predefined configurations like Golden Spiral, Dense Mirror, Minimalist, Star Burst, Double Helix, Nebula, Kaleidoscope, Cosmic Wave, and Fractal Bloom.
 - **High-Resolution Export**: Download your spiral as a 2160x2160 PNG image.
-- **Responsive Design**: Works seamlessly on both mobile and desktop devices.
+- **Responsive Design**: Works seamlessly on mobile (with pinch-to-zoom and swipe-to-rotate) and desktop devices.
+- **Undo/Reset**: Revert to previous states or reset to defaults with a 10-step undo history.
 
 ## Usage
 
 1. Open the [live demo](https://jasonbra1n.github.io/kathara-spiral/) in your browser.
 2. Use the controls to customize your spiral:
    - **Core Parameters**: Adjust scale, nodes, rotation, and toggle auto-rotation.
-   - **Layer Controls**: Set the number of layers and layer ratio, or use the Golden/Silver Ratio buttons.
+   - **Layer Controls**: Set the number of layers (max 100) and layer ratio, or use Golden/Silver Ratio buttons.
    - **Mirror Effects**: Enable mirroring and pick colors for vertical, horizontal, or both.
-   - **Style Options**: Choose colors, line width, opacity, and spiral type.
+   - **Style Options**: Choose colors, line width, opacity, spiral type, gradient stroke, and dashed lines.
 3. Click "Download Image (2160×2160)" to save your creation as a high-resolution PNG.
 
 ## Installation
@@ -37,12 +39,12 @@ To run this project locally:
    cd kathara-spiral
    ```
 3. **Open `index.html`**:
-   - Use a local server (recommended) for proper functionality:
+   - Use a local server (recommended) for full functionality:
      ```bash
      npx http-server
      ```
      Then visit `http://localhost:8080` in your browser.
-   - Alternatively, open `index.html` directly in a browser (some features may be limited due to security restrictions).
+   - Alternatively, open `index.html` directly (some features, like downloads, may be limited due to security restrictions).
 
 ## Files
 
@@ -52,10 +54,22 @@ To run this project locally:
 
 ## How It Works
 
-- The spiral is drawn on an HTML5 canvas using JavaScript.
-- Users can tweak parameters in real-time, with the canvas updating instantly.
-- Mirror effects are achieved by reflecting the spiral path across vertical and/or horizontal axes, with customizable colors.
-- The logarithmic spiral option uses an exponential growth factor, while the linear spiral increases radius proportionally.
+- The spiral is drawn on an HTML5 canvas using JavaScript, updating instantly with user inputs.
+- Mirror effects reflect the spiral path across vertical and/or horizontal axes with customizable colors.
+- Logarithmic spirals use an exponential growth factor, while linear spirals increase radius proportionally.
+- Performance is optimized with a max of 50 nodes and 100 layers, with options to disable gradient strokes for lighter rendering.
+
+## Presets
+
+- **Golden Spiral**: A logarithmic spiral with 50 nodes, 5 layers, and golden ratio scaling.
+- **Dense Mirror**: A dense, mirrored spiral with 50 nodes and 10 layers.
+- **Minimalist**: A simple, single-layer spiral with 12 nodes.
+- **Star Burst**: A vibrant, fully mirrored spiral with 50 nodes and 3 layers.
+- **Double Helix**: A two-layer logarithmic spiral with 40 nodes and vertical mirroring.
+- **Nebula**: A cosmic, semi-transparent spiral with 50 nodes and 7 layers.
+- **Kaleidoscope**: A mirrored, dashed-line spiral with 50 nodes and 4 layers.
+- **Cosmic Wave**: A flowing, auto-rotating spiral with 45 nodes and 6 layers.
+- **Fractal Bloom**: A detailed, mirrored spiral with 50 nodes, 8 layers, and dashed lines.
 
 ## Contributing
 
@@ -69,6 +83,7 @@ This project is open-source and available under the [MIT License](LICENSE).
 
 - Inspired by geometric art and the Kathara grid.
 - Built with love for creative coding and interactive web experiences.
+- Special thanks to collaborators for feedback and feature ideas!
 
 ---
 
