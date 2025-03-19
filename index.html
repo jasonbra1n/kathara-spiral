@@ -12,16 +12,38 @@
   
   <div class="controls">
     <div class="control-group">
+      <h3>Presets</h3>
+      <label>Load Preset: 
+        <select id="presetSelector">
+          <option value="custom">Custom</option>
+          <option value="goldenSpiral">Golden Spiral</option>
+          <option value="denseMirror">Dense Mirror</option>
+          <option value="minimalist">Minimalist</option>
+          <option value="starBurst">Star Burst</option>
+          <option value="doubleHelix">Double Helix</option>
+          <option value="nebula">Nebula</option>
+          <option value="kaleidoscope">Kaleidoscope</option>
+          <option value="cosmicWave">Cosmic Wave</option>
+          <option value="fractalBloom">Fractal Bloom</option>
+        </select>
+      </label>
+      <div>
+        <button onclick="undo()">Undo</button>
+        <button onclick="reset()">Reset</button>
+      </div>
+    </div>
+
+    <div class="control-group">
       <h3>Core Parameters</h3>
       <label>Scale: <input type="range" id="scale" min="1" max="100" value="30"> <span id="scaleValue">30</span></label>
-      <label>Nodes: <input type="range" id="nodes" min="5" max="720" value="12"> <span id="nodesValue">12</span></label>
+      <label>Nodes: <input type="range" id="nodes" min="5" max="50" value="12"> <span id="nodesValue">12</span></label>
       <label>Rotation: <input type="range" id="rotation" min="0" max="360" value="0"> <span id="rotationValue">0</span></label>
-      <label>Auto-Rotate: <input type="checkbox" id="autoRotate"></label> <!-- New Feature: Auto-Rotate Toggle -->
+      <label>Auto-Rotate: <input type="checkbox" id="autoRotate"></label>
     </div>
 
     <div class="control-group">
       <h3>Layer Controls</h3>
-      <label>Layers: <input type="range" id="layers" min="1" max="300" value="3"> <span id="layersValue">3</span></label>
+      <label>Layers: <input type="range" id="layers" min="1" max="100" value="3"> <span id="layersValue">3</span></label>
       <label>Layer Ratio: 
         <input type="range" id="layerRatio" min="0.1" max="10" step="0.1" value="2">
         <input type="number" id="layerRatioNumber" min="0.1" max="10" step="0.1" value="2" style="width: 60px;">
@@ -53,8 +75,10 @@
           <option value="linear">Linear</option>
           <option value="logarithmic">Logarithmic</option>
         </select>
-      </label> <!-- New Feature: Spiral Type Selector -->
-      <label>Background Color: <input type="color" id="backgroundColor" value="#111111"></label> <!-- New Feature: Background Color Picker -->
+      </label>
+      <label>Background Color: <input type="color" id="backgroundColor" value="#111111"></label>
+      <label><input type="checkbox" id="gradientStroke" checked> Gradient Stroke</label>
+      <label><input type="checkbox" id="dashEffect"> Dashed Lines</label>
     </div>
   </div>
 
@@ -62,7 +86,6 @@
     <button onclick="downloadCanvas()">Download Image (2160×2160)</button>
   </div>
 
- <script src="script.js"></script>
-  
+  <script src="script.js"></script>
 </body>
 </html>
