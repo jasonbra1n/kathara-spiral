@@ -8,7 +8,8 @@ const defaultParams = {
   scale: 30, nodes: 12, rotation: 0, layers: 3, layerRatio: 2,
   verticalMirror: false, horizontalMirror: false, strokeColor: '#00FFFF',
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
-  verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF'
+  verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
+  smoothAnimation: true, gradientStroke: true
 };
 
 // -------------------------------
@@ -58,10 +59,14 @@ function drawSpiralOnContext(context, width, height, params) {
 
 function drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, mirrorX, mirrorY, color) {
   context.beginPath();
-  const gradient = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, currentScale * params.nodes);
-  gradient.addColorStop(0, color);
-  gradient.addColorStop(1, '#000000');
-  context.strokeStyle = gradient;
+  if (params.gradientStroke) {
+    const gradient = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, currentScale * params.nodes);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(1, '#000000');
+    context.strokeStyle = gradient;
+  } else {
+    context.strokeStyle = color;
+  }
 
   let angle = initialAngle;
   const spiralType = params.spiralType || document.getElementById('spiralType').value;
@@ -96,24 +101,31 @@ function updateParams() {
     backgroundColor: document.getElementById('backgroundColor').value,
     verticalColor: document.getElementById('verticalColor').value,
     horizontalColor: document.getElementById('horizontalColor').value,
-    bothColor: document.getElementById('bothColor').value
+    bothColor: document.getElementById('bothColor').value,
+    smoothAnimation: document.getElementById('smoothAnimation').checked,
+    gradientStroke: document.getElementById('gradientStroke').checked
   };
   if (!currentParams.scale) currentParams = { ...targetParams };
 }
 
 function animateSpiral() {
   updateParams();
-  let isComplete = true;
-  Object.keys(targetParams).forEach(key => {
-    if (typeof targetParams[key] === 'number' && Math.abs(currentParams[key] - targetParams[key]) > 0.01) {
-      currentParams[key] += (targetParams[key] - currentParams[key]) * 0.1;
-      isComplete = false;
-    } else if (typeof targetParams[key] !== 'number') {
-      currentParams[key] = targetParams[key];
-    }
-  });
-  drawSpiralOnContext(ctx, canvas.width, canvas.height, currentParams);
-  if (!isComplete) requestAnimationFrame(animateSpiral);
+  if (currentParams.smoothAnimation) {
+    let isComplete = true;
+    Object.keys(targetParams).forEach(key => {
+      if (typeof targetParams[key] === 'number' && Math.abs(currentParams[key] - targetParams[key]) > 0.01) {
+        currentParams[key] += (targetParams[key] - currentParams[key]) * 0.1;
+        isComplete = false;
+      } else if (typeof targetParams[key] !== 'number') {
+        currentParams[key] = targetParams[key];
+      }
+    });
+    drawSpiralOnContext(ctx, canvas.width, canvas.height, currentParams);
+    if (!isComplete) requestAnimationFrame(animateSpiral);
+  } else {
+    currentParams = { ...targetParams };
+    drawSpiralOnContext(ctx, canvas.width, canvas.height, currentParams);
+  }
 }
 
 function drawSpiral() {
@@ -125,9 +137,11 @@ function drawSpiral() {
 // -------------------------------
 document.getElementById('presetSelector').addEventListener('change', function() {
   const presets = {
-    goldenSpiral: { scale: 20, nodes: 180, layers: 5, layerRatio: 1.618, strokeColor: '#FFD700', verticalMirror: true, verticalColor: '#FF4500' },
-    denseMirror: { scale: 10, nodes: 360, layers: 10, layerRatio: 2, verticalMirror: true, horizontalMirror: true, bothColor: '#00FF00' },
-    minimalist: { scale: 30, nodes: 12, layers: 1, layerRatio: 2, strokeColor: '#FFFFFF', lineWidth: 1, opacity: 0.8 }
+    goldenSpiral: { scale: 20, nodes: 50, layers: 5, layerRatio: 1.618, strokeColor: '#FFD700', verticalMirror: true, verticalColor: '#FF4500' },
+    denseMirror: { scale: 10, nodes: 50, layers: 10, layerRatio: 2, verticalMirror: true, horizontalMirror: true, bothColor: '#00FF00' },
+    minimalist: { scale: 30, nodes: 12, layers: 1, layerRatio: 2, strokeColor: '#FFFFFF', lineWidth: 1, opacity: 0.8 },
+    starBurst: { scale: 25, nodes: 50, layers: 3, layerRatio: 1.5, strokeColor: '#FF69B4', verticalMirror: true, horizontalMirror: true, bothColor: '#FFA500' },
+    doubleHelix: { scale: 15, nodes: 40, layers: 2, layerRatio: 2, strokeColor: '#00CED1', verticalMirror: true, verticalColor: '#9400D3' }
   };
   const preset = presets[this.value];
   if (preset) {
@@ -138,6 +152,7 @@ document.getElementById('presetSelector').addEventListener('change', function() 
       const valueSpan = document.getElementById(key + 'Value');
       if (valueSpan) valueSpan.textContent = preset[key];
     });
+    saveState();
     drawSpiral();
   }
 });
