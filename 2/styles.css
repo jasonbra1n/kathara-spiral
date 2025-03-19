@@ -10,7 +10,7 @@ canvas {
   margin: 10px; 
   width: 100%; 
   height: auto; 
-  touch-action: none; /* Prevent default touch behaviors */
+  touch-action: none;
 }
 @media (min-width: 768px) {
   canvas { width: 50%; }
