@@ -1,7 +1,6 @@
 const canvas = document.getElementById('spiralCanvas');
 const ctx = canvas.getContext('2d');
 
-let targetParams = {};
 let currentParams = {};
 let history = [];
 const defaultParams = {
@@ -9,7 +8,7 @@ const defaultParams = {
   verticalMirror: false, horizontalMirror: false, strokeColor: '#00FFFF',
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
-  smoothAnimation: true, gradientStroke: true
+  gradientStroke: true, dashEffect: false
 };
 
 // -------------------------------
@@ -33,6 +32,7 @@ function drawSpiralOnContext(context, width, height, params) {
 
   context.lineWidth = params.lineWidth;
   context.globalAlpha = params.opacity;
+  if (params.dashEffect) context.setLineDash([5, 5]); // Dashed line effect
 
   const centerX = width / 2;
   const centerY = height / 2;
@@ -86,7 +86,7 @@ function drawSpiralPath(context, centerX, centerY, params, initialAngle, current
 }
 
 function updateParams() {
-  targetParams = {
+  currentParams = {
     scale: parseFloat(document.getElementById('scale').value),
     nodes: parseInt(document.getElementById('nodes').value),
     rotation: parseFloat(document.getElementById('rotation').value),
@@ -102,34 +102,14 @@ function updateParams() {
     verticalColor: document.getElementById('verticalColor').value,
     horizontalColor: document.getElementById('horizontalColor').value,
     bothColor: document.getElementById('bothColor').value,
-    smoothAnimation: document.getElementById('smoothAnimation').checked,
-    gradientStroke: document.getElementById('gradientStroke').checked
+    gradientStroke: document.getElementById('gradientStroke').checked,
+    dashEffect: document.getElementById('dashEffect').checked
   };
-  if (!currentParams.scale) currentParams = { ...targetParams };
-}
-
-function animateSpiral() {
-  updateParams();
-  if (currentParams.smoothAnimation) {
-    let isComplete = true;
-    Object.keys(targetParams).forEach(key => {
-      if (typeof targetParams[key] === 'number' && Math.abs(currentParams[key] - targetParams[key]) > 0.01) {
-        currentParams[key] += (targetParams[key] - currentParams[key]) * 0.1;
-        isComplete = false;
-      } else if (typeof targetParams[key] !== 'number') {
-        currentParams[key] = targetParams[key];
-      }
-    });
-    drawSpiralOnContext(ctx, canvas.width, canvas.height, currentParams);
-    if (!isComplete) requestAnimationFrame(animateSpiral);
-  } else {
-    currentParams = { ...targetParams };
-    drawSpiralOnContext(ctx, canvas.width, canvas.height, currentParams);
-  }
 }
 
 function drawSpiral() {
-  requestAnimationFrame(animateSpiral);
+  updateParams();
+  drawSpiralOnContext(ctx, canvas.width, canvas.height, currentParams);
 }
 
 // -------------------------------
@@ -141,7 +121,9 @@ document.getElementById('presetSelector').addEventListener('change', function() 
     denseMirror: { scale: 10, nodes: 50, layers: 10, layerRatio: 2, verticalMirror: true, horizontalMirror: true, bothColor: '#00FF00' },
     minimalist: { scale: 30, nodes: 12, layers: 1, layerRatio: 2, strokeColor: '#FFFFFF', lineWidth: 1, opacity: 0.8 },
     starBurst: { scale: 25, nodes: 50, layers: 3, layerRatio: 1.5, strokeColor: '#FF69B4', verticalMirror: true, horizontalMirror: true, bothColor: '#FFA500' },
-    doubleHelix: { scale: 15, nodes: 40, layers: 2, layerRatio: 2, strokeColor: '#00CED1', verticalMirror: true, verticalColor: '#9400D3' }
+    doubleHelix: { scale: 15, nodes: 40, layers: 2, layerRatio: 2, strokeColor: '#00CED1', verticalMirror: true, verticalColor: '#9400D3' },
+    nebula: { scale: 35, nodes: 50, layers: 7, layerRatio: 1.8, strokeColor: '#8A2BE2', opacity: 0.6, gradientStroke: true, backgroundColor: '#1A0033' },
+    kaleidoscope: { scale: 20, nodes: 50, layers: 4, layerRatio: 2.2, strokeColor: '#FF1493', verticalMirror: true, horizontalMirror: true, bothColor: '#00FFFF', dashEffect: true }
   };
   const preset = presets[this.value];
   if (preset) {
