@@ -19,6 +19,8 @@
           <option value="goldenSpiral">Golden Spiral</option>
           <option value="denseMirror">Dense Mirror</option>
           <option value="minimalist">Minimalist</option>
+          <option value="starBurst">Star Burst</option>
+          <option value="doubleHelix">Double Helix</option>
         </select>
       </label>
       <div>
@@ -30,7 +32,7 @@
     <div class="control-group">
       <h3>Core Parameters</h3>
       <label>Scale: <input type="range" id="scale" min="1" max="100" value="30"> <span id="scaleValue">30</span></label>
-      <label>Nodes: <input type="range" id="nodes" min="5" max="720" value="12"> <span id="nodesValue">12</span></label>
+      <label>Nodes: <input type="range" id="nodes" min="5" max="50" value="12"> <span id="nodesValue">12</span></label>
       <label>Rotation: <input type="range" id="rotation" min="0" max="360" value="0"> <span id="rotationValue">0</span></label>
       <label>Auto-Rotate: <input type="checkbox" id="autoRotate"></label>
     </div>
@@ -71,6 +73,8 @@
         </select>
       </label>
       <label>Background Color: <input type="color" id="backgroundColor" value="#111111"></label>
+      <label><input type="checkbox" id="smoothAnimation" checked> Smooth Animation</label>
+      <label><input type="checkbox" id="gradientStroke" checked> Gradient Stroke</label>
     </div>
   </div>
 
