@@ -1,39 +1,60 @@
- body { text-align: center; font-family: Arial, sans-serif; background: #1a1a1a; }
-    /* Canvas is 100% width on mobile, 50% on desktop */
-    canvas { 
-      border: 1px solid #444; 
-      background: transparent; /* Changed from #111 to transparent for dynamic background */
-      margin: 10px; 
-      width: 100%; 
-      height: auto; 
-    }
-    @media (min-width: 768px) {
-      canvas { width: 50%; }
-    }
-    .controls { 
-      margin: 10px; 
-      padding: 10px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-    }
-    .control-group { border: 1px solid #444; padding: 10px; }
-    label { display: block; margin: 5px 0; }
-    input[type="range"] { width: 120px; }
-    /* Additional styles for mirror color controls */
-    .mirror-colors { margin-top: 5px; }
-    .mirror-colors label { display: inline-block; margin: 0 10px; }
-    /* Basic styling for the download button */
-    .download-container { margin-top: 20px; }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      border: none;
-      background: #00aced;
-      color: #fff;
-      border-radius: 5px;
-    }
-    button:hover {
-      background: #0084b4;
-    }
+body { 
+  text-align: center; 
+  font-family: Arial, sans-serif; 
+  background: #1a1a1a; 
+  color: #fff; 
+}
+canvas { 
+  border: 1px solid #444; 
+  background: transparent; 
+  margin: 10px; 
+  width: 100%; 
+  height: auto; 
+  touch-action: none;
+}
+@media (min-width: 768px) {
+  canvas { width: 50%; }
+}
+.controls { 
+  margin: 10px; 
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.control-group { 
+  border: 1px solid #444; 
+  padding: 10px; 
+  background: #222; 
+  border-radius: 5px;
+}
+label { 
+  display: block; 
+  margin: 5px 0; 
+}
+input[type="range"] { 
+  width: 120px; 
+}
+.mirror-colors { 
+  margin-top: 5px; 
+}
+.mirror-colors label { 
+  display: inline-block; 
+  margin: 0 10px; 
+}
+.download-container { 
+  margin-top: 20px; 
+}
+button {
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  background: #00aced;
+  color: #fff;
+  border-radius: 5px;
+  margin: 5px;
+}
+button:hover {
+  background: #0084b4;
+}
