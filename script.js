@@ -8,7 +8,7 @@ const defaultParams = {
   verticalMirror: false, horizontalMirror: false, strokeColor: '#00FFFF',
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
-  gradientStroke: true, dashEffect: false, autoRotate: false
+  gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: false
 };
 
 // -------------------------------
@@ -38,7 +38,7 @@ function drawSpiralOnContext(context, width, height, params) {
   const centerY = height / 2;
 
   for (let l = 0; l < params.layers; l++) {
-    const currentScale = params.scale * (l + 1) * (params.layerRatio / 10);
+    const currentScale = params.scale * Math.pow(params.layerRatio / 5, l); // Fixed scaling
     const initialAngle = (params.rotation + (l * 10)) * (Math.PI / 180);
 
     drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, false, false, params.strokeColor);
@@ -70,8 +70,12 @@ function drawSpiralPath(context, centerX, centerY, params, initialAngle, current
 
   let angle = initialAngle;
   const spiralType = params.spiralType;
+  let prevX = centerX;
+  let prevY = centerY;
 
-  for (let i = 0; i < params.nodes; i++) {
+  context.moveTo(prevX, prevY);
+
+  for (let i = 1; i < params.nodes; i++) {
     let r = spiralType === 'linear' ? currentScale * i : currentScale * Math.exp(0.1 * i);
     let x = centerX + Math.cos(angle) * r;
     let y = centerY + Math.sin(angle) * r;
@@ -79,9 +83,19 @@ function drawSpiralPath(context, centerX, centerY, params, initialAngle, current
     if (mirrorX) x = centerX * 2 - x;
     if (mirrorY) y = centerY * 2 - y;
 
-    context.lineTo(x, y);
+    if (params.curvedLines) {
+      const midX = (prevX + x) / 2;
+      const midY = (prevY + y) / 2;
+      context.quadraticCurveTo(prevX, prevY, midX, midY);
+    } else {
+      context.lineTo(x, y);
+    }
+
+    prevX = x;
+    prevY = y;
     angle += Math.PI / 3;
   }
+
   context.stroke();
 }
 
@@ -104,7 +118,8 @@ function updateParams() {
     bothColor: document.getElementById('bothColor').value,
     gradientStroke: document.getElementById('gradientStroke').checked,
     dashEffect: document.getElementById('dashEffect').checked,
-    autoRotate: document.getElementById('autoRotate').checked
+    autoRotate: document.getElementById('autoRotate').checked,
+    curvedLines: document.getElementById('curvedLines').checked
   };
 }
 
@@ -118,16 +133,19 @@ function drawSpiral() {
 // -------------------------------
 document.getElementById('presetSelector').addEventListener('change', function() {
   const presets = {
-    goldenSpiral: { scale: 20, nodes: 50, rotation: 0, layers: 5, layerRatio: 1.618, verticalMirror: true, horizontalMirror: false, strokeColor: '#FFD700', lineWidth: 2, opacity: 1, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#FF4500', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false },
-    denseMirror: { scale: 10, nodes: 50, rotation: 0, layers: 10, layerRatio: 2, verticalMirror: true, horizontalMirror: true, strokeColor: '#00FF00', lineWidth: 3, opacity: 1, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FF00', gradientStroke: false, dashEffect: false, autoRotate: false },
-    minimalist: { scale: 30, nodes: 12, rotation: 0, layers: 1, layerRatio: 2, verticalMirror: false, horizontalMirror: false, strokeColor: '#FFFFFF', lineWidth: 1, opacity: 0.8, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: false, autoRotate: false },
-    starBurst: { scale: 25, nodes: 50, rotation: 0, layers: 3, layerRatio: 1.5, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF69B4', lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFA500', gradientStroke: true, dashEffect: false, autoRotate: false },
-    doubleHelix: { scale: 15, nodes: 40, rotation: 0, layers: 2, layerRatio: 2, verticalMirror: true, horizontalMirror: false, strokeColor: '#00CED1', lineWidth: 2, opacity: 1, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#9400D3', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false },
-    nebula: { scale: 35, nodes: 50, rotation: 0, layers: 7, layerRatio: 1.8, verticalMirror: false, horizontalMirror: false, strokeColor: '#8A2BE2', lineWidth: 2, opacity: 0.6, spiralType: 'logarithmic', backgroundColor: '#1A0033', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false },
-    kaleidoscope: { scale: 20, nodes: 50, rotation: 0, layers: 4, layerRatio: 2.2, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF1493', lineWidth: 3, opacity: 1, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FFFF', gradientStroke: false, dashEffect: true, autoRotate: false },
-    cosmicWave: { scale: 40, nodes: 45, rotation: 0, layers: 6, layerRatio: 1.9, verticalMirror: false, horizontalMirror: true, strokeColor: '#00B7EB', lineWidth: 2, opacity: 0.9, spiralType: 'logarithmic', backgroundColor: '#0A1F44', verticalColor: '#FF00FF', horizontalColor: '#00CED1', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: true },
-    fractalBloom: { scale: 15, nodes: 50, rotation: 0, layers: 8, layerRatio: 2.414, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF4500', lineWidth: 1, opacity: 0.7, spiralType: 'linear', backgroundColor: '#222222', verticalColor: '#FFD700', horizontalColor: '#FF69B4', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: true, autoRotate: false }
-  };
+  goldenSpiral: { scale: 25, nodes: 50, rotation: 0, layers: 50, layerRatio: 4.8, verticalMirror: true, horizontalMirror: false, strokeColor: '#FFD700', lineWidth: 1, opacity: 0.7, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#FF4500', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true },
+  denseMirror: { scale: 15, nodes: 50, rotation: 0, layers: 80, layerRatio: 4.6, verticalMirror: true, horizontalMirror: true, strokeColor: '#00FF00', lineWidth: 2, opacity: 0.8, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FF00', gradientStroke: false, dashEffect: true, autoRotate: false, curvedLines: false },
+  minimalist: { scale: 30, nodes: 12, rotation: 0, layers: 3, layerRatio: 5, verticalMirror: false, horizontalMirror: false, strokeColor: '#FFFFFF', lineWidth: 1, opacity: 0.9, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: false, autoRotate: false, curvedLines: true },
+  starBurst: { scale: 25, nodes: 50, rotation: 0, layers: 40, layerRatio: 5.2, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF69B4', lineWidth: 1, opacity: 0.85, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFA500', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: false },
+  doubleHelix: { scale: 15, nodes: 40, rotation: 0, layers: 20, layerRatio: 5.5, verticalMirror: true, horizontalMirror: false, strokeColor: '#00CED1', lineWidth: 1, opacity: 0.9, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#9400D3', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true },
+  nebula: { scale: 20, nodes: 50, rotation: 0, layers: 100, layerRatio: 4.7, verticalMirror: false, horizontalMirror: true, strokeColor: '#8A2BE2', lineWidth: 2, opacity: 0.6, spiralType: 'logarithmic', backgroundColor: '#1A0033', verticalColor: '#FF00FF', horizontalColor: '#00CED1', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true },
+  kaleidoscope: { scale: 20, nodes: 50, rotation: 0, layers: 60, layerRatio: 4.8, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF1493', lineWidth: 2, opacity: 0.75, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FFFF', gradientStroke: false, dashEffect: true, autoRotate: true, curvedLines: false },
+  cosmicWave: { scale: 40, nodes: 45, rotation: 0, layers: 70, layerRatio: 4.5, verticalMirror: false, horizontalMirror: true, strokeColor: '#00B7EB', lineWidth: 1, opacity: 0.9, spiralType: 'logarithmic', backgroundColor: '#0A1F44', verticalColor: '#FF00FF', horizontalColor: '#00CED1', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: true },
+  fractalBloom: { scale: 15, nodes: 50, rotation: 0, layers: 50, layerRatio: 5.3, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF4500', lineWidth: 1, opacity: 0.65, spiralType: 'linear', backgroundColor: '#222222', verticalColor: '#FFD700', horizontalColor: '#FF69B4', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: false, autoRotate: false, curvedLines: true },
+  crystalVortex: { scale: 25, nodes: 40, rotation: 0, layers: 40, layerRatio: 4.9, verticalMirror: true, horizontalMirror: false, strokeColor: '#00FFFF', lineWidth: 1, opacity: 0.8, spiralType: 'logarithmic', backgroundColor: '#0D1B2A', verticalColor: '#1E90FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true },
+  galacticPulse: { scale: 50, nodes: 50, rotation: 0, layers: 60, layerRatio: 5.1, verticalMirror: false, horizontalMirror: true, strokeColor: '#FF00FF', lineWidth: 2, opacity: 0.9, spiralType: 'linear', backgroundColor: '#000033', verticalColor: '#FF00FF', horizontalColor: '#00FF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: false },
+  etherealRings: { scale: 30, nodes: 30, rotation: 0, layers: 80, layerRatio: 4.6, verticalMirror: true, horizontalMirror: true, strokeColor: '#E6E6FA', lineWidth: 1, opacity: 0.5, spiralType: 'logarithmic', backgroundColor: '#2A2A40', verticalColor: '#D8BFD8', horizontalColor: '#98FB98', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: true, autoRotate: false, curvedLines: true }
+};
   const preset = presets[this.value];
   if (preset) {
     Object.keys(preset).forEach(key => {
