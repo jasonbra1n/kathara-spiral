@@ -209,19 +209,21 @@ document.querySelectorAll('input, select').forEach(input => {
     saveState();
     if (this.type === 'range') {
       const numberInput = document.getElementById(this.id + 'Number');
-      if (numberInput) numberInput.value = parseFloat(this.value).toFixed(1); // Preserve 1 decimal
+      if (numberInput) numberInput.value = parseFloat(this.value).toFixed(1);
       const valueSpan = document.getElementById(this.id + 'Value');
       if (valueSpan) valueSpan.textContent = parseFloat(this.value).toFixed(1);
     } else if (this.id === 'layerRatioNumber') {
       const slider = document.getElementById('layerRatio');
-      let value = parseFloat(this.value) || 0.1; // Default to 0.1 if invalid
+      let value = parseFloat(this.value);
+      if (isNaN(value)) return; // Allow mid-typing (e.g., "7.")
       value = Math.max(0.1, Math.min(10, value));
-      this.value = value.toFixed(1); // Ensure decimal display
+      this.value = value.toFixed(1);
       slider.value = value;
       const valueSpan = document.getElementById('layerRatioValue');
       if (valueSpan) valueSpan.textContent = value.toFixed(1);
+      drawSpiral();
     }
-    drawSpiral();
+    if (this.type !== 'text') drawSpiral(); // Only redraw for non-text inputs here
   });
 });
 
