@@ -61,15 +61,18 @@ To run this project locally:
 
 ## Presets
 
-- **Golden Spiral**: A logarithmic spiral with 50 nodes, 5 layers, and golden ratio scaling.
-- **Dense Mirror**: A dense, mirrored spiral with 50 nodes and 10 layers.
-- **Minimalist**: A simple, single-layer spiral with 12 nodes.
-- **Star Burst**: A vibrant, fully mirrored spiral with 50 nodes and 3 layers.
-- **Double Helix**: A two-layer logarithmic spiral with 40 nodes and vertical mirroring.
-- **Nebula**: A cosmic, semi-transparent spiral with 50 nodes and 7 layers.
-- **Kaleidoscope**: A mirrored, dashed-line spiral with 50 nodes and 4 layers.
-- **Cosmic Wave**: A flowing, auto-rotating spiral with 45 nodes and 6 layers.
-- **Fractal Bloom**: A detailed, mirrored spiral with 50 nodes, 8 layers, and dashed lines.
+- **Golden Spiral**: A logarithmic spiral with 50 nodes, 10 layers, and golden-hued growth (ratio 6).
+- **Dense Mirror**: A dense, mirrored linear spiral with 50 nodes, 20 layers, and dashed lines (ratio 5.5).
+- **Minimalist**: A simple, single-layer spiral with 12 nodes and smooth curves (ratio 5).
+- **Star Burst**: A vibrant, fully mirrored spiral with 50 nodes, 5 layers, and auto-rotation (ratio 6.5).
+- **Double Helix**: A two-layer logarithmic spiral with 40 nodes and vertical mirroring (ratio 7).
+- **Nebula**: A cosmic, semi-transparent spiral with 50 nodes, 100 layers, and a space-cloud effect (ratio 4.7).
+- **Kaleidoscope**: A mirrored, dashed-line spiral with 50 nodes, 8 layers, and auto-rotation (ratio 6).
+- **Cosmic Wave**: A flowing, auto-rotating spiral with 45 nodes, 10 layers, and logarithmic curves (ratio 5.8).
+- **Fractal Bloom**: A detailed, mirrored spiral with 50 nodes, 15 layers, and smooth curves (ratio 6.2).
+- **Crystal Vortex**: A sharp, logarithmic spiral with 40 nodes, 6 layers, and vertical mirroring (ratio 5.5).
+- **Galactic Pulse**: A bold, auto-rotating spiral with 50 nodes, 8 layers, and horizontal mirroring (ratio 6.5).
+- **Ethereal Rings**: A soft, dashed spiral with 30 nodes, 12 layers, and full mirroring (ratio 5.2).
 
 ## Contributing
 
