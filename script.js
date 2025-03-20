@@ -204,6 +204,15 @@ function reset() {
 // -------------------------------
 // Input Handlers
 // -------------------------------
+// Simple debounce function
+function debounce(fn, delay) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 document.querySelectorAll('input, select').forEach(input => {
   input.addEventListener('input', function() {
     saveState();
@@ -212,29 +221,63 @@ document.querySelectorAll('input, select').forEach(input => {
       if (numberInput) numberInput.value = parseFloat(this.value).toFixed(1);
       const valueSpan = document.getElementById(this.id + 'Value');
       if (valueSpan) valueSpan.textContent = parseFloat(this.value).toFixed(1);
+      drawSpiral();
     } else if (this.id === 'layerRatioNumber') {
       const slider = document.getElementById('layerRatio');
-      let value = parseFloat(this.value);
-      if (isNaN(value)) return; // Allow mid-typing (e.g., "7.")
+      const valueSpan = document.getElementById('layerRatioValue');
+      const rawValue = this.value;
+      const parsedValue = parseFloat(rawValue);
+      
+      // If it's a valid number, update immediately
+      if (!isNaN(parsedValue)) {
+        const clampedValue = Math.max(0.1, Math.min(10, parsedValue));
+        this.value = clampedValue.toFixed(1);
+        slider.value = clampedValue;
+        if (valueSpan) valueSpan.textContent = clampedValue.toFixed(1);
+        drawSpiral();
+      }
+      // Debounce redraw to allow mid-typing (e.g., "7.")
+    }
+  });
+
+  // Add blur event for final validation
+  if (input.id === 'layerRatioNumber') {
+    input.addEventListener('blur', function() {
+      const slider = document.getElementById('layerRatio');
+      const valueSpan = document.getElementById('layerRatioValue');
+      let value = parseFloat(this.value) || 0.1; // Default to 0.1 if invalid
       value = Math.max(0.1, Math.min(10, value));
       this.value = value.toFixed(1);
       slider.value = value;
-      const valueSpan = document.getElementById('layerRatioValue');
       if (valueSpan) valueSpan.textContent = value.toFixed(1);
       drawSpiral();
-    }
-    if (this.type !== 'text') drawSpiral(); // Only redraw for non-text inputs here
-  });
+    });
+  }
 });
 
-function setRatio(ratio) {
-  document.getElementById('layerRatio').value = ratio;
-  document.getElementById('layerRatioNumber').value = ratio;
-  const valueSpan = document.getElementById('layerRatioValue');
-  if (valueSpan) valueSpan.textContent = ratio;
-  saveState();
-  drawSpiral();
-}
+// Ensure preset loading still works
+document.getElementById('presetSelector').addEventListener('change', function() {
+  const presets = {
+    // ... (preset definitions unchanged)
+  };
+  const preset = presets[this.value];
+  if (preset) {
+    Object.keys(preset).forEach(key => {
+      const element = document.getElementById(key);
+      if (element.type === 'checkbox') element.checked = preset[key];
+      else element.value = preset[key];
+      const valueSpan = document.getElementById(key + 'Value');
+      if (valueSpan) valueSpan.textContent = preset[key];
+      if (key === 'layerRatio') {
+        const numberInput = document.getElementById('layerRatioNumber');
+        if (numberInput) numberInput.value = parseFloat(preset[key]).toFixed(1);
+      }
+    });
+    saveState();
+    drawSpiral();
+  }
+});
+
 
 // -------------------------------
 // Auto-Rotate Animation
