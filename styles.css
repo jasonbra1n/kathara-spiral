@@ -3,17 +3,24 @@ body {
   font-family: Arial, sans-serif; 
   background: #1a1a1a; 
   color: #fff; 
+  margin: 0; /* Remove default body margin to prevent shifting */
+  padding: 0;
 }
 canvas { 
   border: 1px solid #444; 
   background: transparent; 
-  margin: 10px; 
-  width: 100%; 
+  display: block; /* Ensure canvas behaves as a block element for centering */
+  margin: 10px auto; /* Center horizontally with auto margins */
+  width: 100%; /* Full width on mobile */
+  max-width: 100%; /* Prevent overflow beyond viewport */
   height: auto; 
   touch-action: none;
 }
 @media (min-width: 768px) {
-  canvas { width: 50%; }
+  canvas { 
+    width: 50%; /* 50% width on desktop */
+    max-width: none; /* Allow full 50% width on larger screens */
+  }
 }
 .controls { 
   margin: 10px; 
