@@ -1,0 +1,96 @@
+body { 
+  text-align: center; 
+  font-family: Arial, sans-serif; 
+  background: #1a1a1a; 
+  color: #fff; 
+  margin: 0; 
+  padding: 0;
+}
+canvas { 
+  border: 1px solid #444; 
+  background: transparent; 
+  display: block; 
+  margin: 10px auto; 
+  width: 100%; 
+  max-width: 100%; 
+  height: auto; 
+  touch-action: none;
+}
+@media (min-width: 768px) {
+  canvas { 
+    width: 50%; 
+    max-width: none; 
+  }
+}
+canvas:fullscreen {
+  width: 100vw; /* Full width always in fullscreen */
+  height: 100vh; /* Full height always in fullscreen */
+  margin: 0;
+  border: none;
+  position: static; /* Remove absolute positioning */
+  transform: none; /* No centering via transform */
+  object-fit: contain; /* Keep drawing proportional */
+}
+.canvas-controls {
+  margin: 10px 0;
+}
+.controls { 
+  margin: 10px; 
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.control-group { 
+  border: 1px solid #444; 
+  padding: 10px; 
+  background: #222; 
+  border-radius: 5px;
+}
+label { 
+  display: block; 
+  margin: 5px 0; 
+}
+input[type="range"] { 
+  width: 120px; 
+}
+.mirror-colors { 
+  margin-top: 5px; 
+}
+.mirror-colors label { 
+  display: inline-block; 
+  margin: 0 10px; 
+}
+.download-container { 
+  margin-top: 20px; 
+}
+button {
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  background: #00aced;
+  color: #fff;
+  border-radius: 5px;
+  margin: 5px;
+}
+button:hover {
+  background: #0084b4;
+}
+.fullscreen-overlay {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  display: none;
+  z-index: 1000;
+}
+#audioOptions label {
+  display: inline-block;
+  margin-right: 15px;
+}
