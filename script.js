@@ -15,15 +15,22 @@ const defaultParams = {
 // Responsive Canvas Setup
 // -------------------------------
 function resizeCanvas() {
+  const canvas = document.getElementById('spiralCanvas');
   if (document.fullscreenElement) {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const size = Math.min(vw, vh); // Use the smaller dimension
+    const isLandscape = vw > vh;
+    const size = Math.min(vw, vh); // Square drawing size
     canvas.width = size;
     canvas.height = size;
+    // Style adjustments for fullscreen
+    canvas.style.width = isLandscape ? '100vw' : `${size}px`;
+    canvas.style.height = isLandscape ? `${size}px` : '100vh';
   } else {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientWidth; // Normal square behavior
+    canvas.style.width = ''; // Reset to CSS default
+    canvas.style.height = '';
   }
   drawSpiral();
 }
