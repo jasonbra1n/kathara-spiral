@@ -15,8 +15,16 @@ const defaultParams = {
 // Responsive Canvas Setup
 // -------------------------------
 function resizeCanvas() {
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientWidth;
+  if (document.fullscreenElement) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const size = Math.min(vw, vh); // Use the smaller dimension
+    canvas.width = size;
+    canvas.height = size;
+  } else {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientWidth; // Normal square behavior
+  }
   drawSpiral();
 }
 window.addEventListener('resize', resizeCanvas);
@@ -337,6 +345,7 @@ function setRatio(ratio) {
 // -------------------------------
 const fullscreenButton = document.getElementById('fullscreenButton');
 const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+const isMobile = 'ontouchstart' in window || window.innerWidth < 768;
 
 fullscreenButton.addEventListener('click', () => {
   const canvas = document.getElementById('spiralCanvas');
@@ -356,10 +365,20 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 function showFullscreenOverlay() {
+  fullscreenOverlay.textContent = isMobile ? 'Tap to exit full screen' : 'Press ESC to exit full screen';
   fullscreenOverlay.style.display = 'block';
   setTimeout(() => {
     fullscreenOverlay.style.display = 'none';
   }, 3000); // Hide after 3 seconds
+}
+
+if (isMobile) {
+  canvas.addEventListener('touchstart', (e) => {
+    if (document.fullscreenElement) {
+      e.preventDefault();
+      document.exitFullscreen();
+    }
+  });
 }
 
 // Initial draw
