@@ -1,4 +1,6 @@
-# Kathara Spiral with Colored Mirrors
+# Kathara Spiral Generator
+
+Create stunning, customizable spirals with vibrant colored mirrors, multi-layered designs, and dynamic cosmic effects. This web-based tool lets you tweak scale, nodes, layers, and ratios, with options for logarithmic or linear growth, gradient strokes, dashed lines, and auto-rotation. Explore 12 presets—from the ethereal **Nebula** to the rippling **Cosmic Wave**—or craft your own spiral masterpiece.
 
 An interactive web-based spiral generator that creates mesmerizing Kathara-inspired spiral patterns with customizable parameters and mirror effects. Built with HTML, CSS, and JavaScript, this project allows users to experiment with spirals, layers, mirroring, and colors, and download high-resolution images of their creations.
 
@@ -6,15 +8,23 @@ An interactive web-based spiral generator that creates mesmerizing Kathara-inspi
 
 ## Features
 
-- **Customizable Spirals**: Adjust scale (1-100), nodes (5-50), rotation (0-360°), and spiral type (linear or logarithmic).
-- **Layer Controls**: Add up to 100 layers with adjustable ratios, including presets for Golden Ratio (1.618) and Silver Ratio (2.414).
-- **Mirror Effects**: Enable vertical and/or horizontal mirroring with distinct color options for each.
-- **Style Options**: Modify stroke color, line width (1-10), opacity (0-1), background color, gradient strokes, and dashed lines.
-- **Auto-Rotation**: Toggle continuous spiral rotation for dynamic visuals.
-- **Presets**: Choose from predefined configurations like Golden Spiral, Dense Mirror, Minimalist, Star Burst, Double Helix, Nebula, Kaleidoscope, Cosmic Wave, and Fractal Bloom.
-- **High-Resolution Export**: Download your spiral as a 2160x2160 PNG image.
-- **Responsive Design**: Works seamlessly on mobile (with pinch-to-zoom and swipe-to-rotate) and desktop devices.
-- **Undo/Reset**: Revert to previous states or reset to defaults with a 10-step undo history.
+- **Layered Spirals**: Stack up to 100 layers with adjustable scaling (shrink or grow).
+- **Colored Mirroring**: Vertical, horizontal, or both, with distinct colors for each.
+- **Dynamic Effects**: Auto-rotate, curved lines, gradients, and dashes for visual flair.
+- **Presets**: 12 unique designs, optimized for cosmic and artistic impact.
+- **Responsive**: Works on desktop and mobile with touch controls.
+- **Export**: Download high-res PNGs (2160x2160).
+
+## Topics
+
+- canvas
+- javascript
+- spiral-generator
+- visual-art
+- web-app
+- interactive
+- cosmic-design
+- geometry
 
 ## Usage
 
@@ -44,7 +54,7 @@ To run this project locally:
      npx http-server
      ```
      Then visit `http://localhost:8080` in your browser.
-   - Alternatively, open `index.html` directly (some features, like downloads, may be limited due to security restrictions).
+   - Alternatively, open `index.html` directly (some features, like downloads, may be limited due to browser security restrictions).
 
 ## Files
 
@@ -57,7 +67,7 @@ To run this project locally:
 - The spiral is drawn on an HTML5 canvas using JavaScript, updating instantly with user inputs.
 - Mirror effects reflect the spiral path across vertical and/or horizontal axes with customizable colors.
 - Logarithmic spirals use an exponential growth factor, while linear spirals increase radius proportionally.
-- Performance is optimized with a max of 50 nodes and 100 layers, with options to disable gradient strokes for lighter rendering.
+- Performance is optimized for up to 50 nodes and 100 layers, with options to disable gradient strokes for lighter rendering.
 
 ## Presets
 
@@ -91,4 +101,3 @@ This project is open-source and available under the [MIT License](LICENSE).
 ---
 
 Created by [jasonbra1n](https://github.com/jasonbra1n) | March 2025
-```
