@@ -332,5 +332,35 @@ function setRatio(ratio) {
   drawSpiral();
 }
 
+// -------------------------------
+// Fullscreen Handling
+// -------------------------------
+const fullscreenButton = document.getElementById('fullscreenButton');
+const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+
+fullscreenButton.addEventListener('click', () => {
+  const canvas = document.getElementById('spiralCanvas');
+  if (canvas.requestFullscreen) {
+    canvas.requestFullscreen();
+    showFullscreenOverlay();
+  }
+});
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    fullscreenOverlay.style.display = 'none';
+    resizeCanvas(); // Restore normal size
+  } else {
+    resizeCanvas(); // Adjust to fullscreen
+  }
+});
+
+function showFullscreenOverlay() {
+  fullscreenOverlay.style.display = 'block';
+  setTimeout(() => {
+    fullscreenOverlay.style.display = 'none';
+  }, 3000); // Hide after 3 seconds
+}
+
 // Initial draw
 drawSpiral();
