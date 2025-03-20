@@ -18,15 +18,13 @@ function resizeCanvas() {
   if (document.fullscreenElement) {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const isLandscape = vw > vh;
-    const size = Math.min(vw, vh); // Square drawing size
-    canvas.width = size;
-    canvas.height = size;
-    canvas.style.width = isLandscape ? '100vw' : `${size}px`;
-    canvas.style.height = isLandscape ? `${size}px` : '100vh';
+    canvas.width = vw; // Full viewport width
+    canvas.height = vh; // Full viewport height
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
   } else {
     canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientWidth;
+    canvas.height = canvas.clientWidth; // Normal square behavior
     canvas.style.width = '';
     canvas.style.height = '';
   }
