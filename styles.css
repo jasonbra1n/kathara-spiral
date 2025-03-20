@@ -33,6 +33,7 @@ canvas:fullscreen {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  object-fit: contain; /* Ensures canvas content scales without stretching */
 }
 .canvas-controls {
   margin: 10px 0;
