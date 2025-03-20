@@ -3,24 +3,34 @@ body {
   font-family: Arial, sans-serif; 
   background: #1a1a1a; 
   color: #fff; 
-  margin: 0; /* Remove default body margin to prevent shifting */
+  margin: 0; 
   padding: 0;
 }
 canvas { 
   border: 1px solid #444; 
   background: transparent; 
-  display: block; /* Ensure canvas behaves as a block element for centering */
-  margin: 10px auto; /* Center horizontally with auto margins */
-  width: 100%; /* Full width on mobile */
-  max-width: 100%; /* Prevent overflow beyond viewport */
+  display: block; 
+  margin: 10px auto; 
+  width: 100%; 
+  max-width: 100%; 
   height: auto; 
   touch-action: none;
 }
 @media (min-width: 768px) {
   canvas { 
-    width: 50%; /* 50% width on desktop */
-    max-width: none; /* Allow full 50% width on larger screens */
+    width: 50%; 
+    max-width: none; 
   }
+}
+canvas:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  margin: 0;
+  border: none;
+}
+.canvas-controls {
+  margin: 10px 0;
 }
 .controls { 
   margin: 10px; 
@@ -64,4 +74,17 @@ button {
 }
 button:hover {
   background: #0084b4;
+}
+.fullscreen-overlay {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  display: none;
+  z-index: 1000;
 }
