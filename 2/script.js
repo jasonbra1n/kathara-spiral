@@ -95,11 +95,6 @@ function drawSpiralPath(context, centerX, centerY, params, initialAngle, current
     angle += Math.PI / 3;
   }
 
-  // Close the curve smoothly if curvedLines is enabled
-  if (params.curvedLines && params.nodes > 1) {
-    context.quadraticCurveTo(prevX, prevY, centerX + Math.cos(initialAngle) * currentScale, centerY + Math.sin(initialAngle) * currentScale);
-  }
-
   context.stroke();
 }
 
