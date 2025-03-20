@@ -207,6 +207,14 @@ document.querySelectorAll('input, select').forEach(input => {
       if (numberInput) numberInput.value = this.value;
       const valueSpan = document.getElementById(this.id + 'Value');
       if (valueSpan) valueSpan.textContent = this.value;
+    } else if (this.id === 'layerRatioNumber') {
+      const slider = document.getElementById('layerRatio');
+      let value = parseFloat(this.value);
+      value = Math.max(0.1, Math.min(10, value));
+      this.value = value;
+      slider.value = value;
+      const valueSpan = document.getElementById('layerRatioValue');
+      if (valueSpan) valueSpan.textContent = value;
     }
     drawSpiral();
   });
@@ -215,6 +223,8 @@ document.querySelectorAll('input, select').forEach(input => {
 function setRatio(ratio) {
   document.getElementById('layerRatio').value = ratio;
   document.getElementById('layerRatioNumber').value = ratio;
+  const valueSpan = document.getElementById('layerRatioValue');
+  if (valueSpan) valueSpan.textContent = ratio;
   saveState();
   drawSpiral();
 }
