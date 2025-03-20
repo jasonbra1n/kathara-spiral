@@ -154,6 +154,11 @@ document.getElementById('presetSelector').addEventListener('change', function() 
       else element.value = preset[key];
       const valueSpan = document.getElementById(key + 'Value');
       if (valueSpan) valueSpan.textContent = preset[key];
+      // Sync number input for layerRatio
+      if (key === 'layerRatio') {
+        const numberInput = document.getElementById('layerRatioNumber');
+        if (numberInput) numberInput.value = parseFloat(preset[key]).toFixed(1);
+      }
     });
     saveState();
     drawSpiral();
@@ -204,17 +209,17 @@ document.querySelectorAll('input, select').forEach(input => {
     saveState();
     if (this.type === 'range') {
       const numberInput = document.getElementById(this.id + 'Number');
-      if (numberInput) numberInput.value = this.value;
+      if (numberInput) numberInput.value = parseFloat(this.value).toFixed(1); // Preserve 1 decimal
       const valueSpan = document.getElementById(this.id + 'Value');
-      if (valueSpan) valueSpan.textContent = this.value;
+      if (valueSpan) valueSpan.textContent = parseFloat(this.value).toFixed(1);
     } else if (this.id === 'layerRatioNumber') {
       const slider = document.getElementById('layerRatio');
-      let value = parseFloat(this.value);
+      let value = parseFloat(this.value) || 0.1; // Default to 0.1 if invalid
       value = Math.max(0.1, Math.min(10, value));
-      this.value = value;
+      this.value = value.toFixed(1); // Ensure decimal display
       slider.value = value;
       const valueSpan = document.getElementById('layerRatioValue');
-      if (valueSpan) valueSpan.textContent = value;
+      if (valueSpan) valueSpan.textContent = value.toFixed(1);
     }
     drawSpiral();
   });
