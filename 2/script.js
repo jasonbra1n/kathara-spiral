@@ -38,7 +38,7 @@ function drawSpiralOnContext(context, width, height, params) {
   const centerY = height / 2;
 
   for (let l = 0; l < params.layers; l++) {
-    const currentScale = params.scale * (l + 1) * (params.layerRatio / 10);
+    const currentScale = params.scale * Math.pow(params.layerRatio / 10, l); // Adjusted scaling
     const initialAngle = (params.rotation + (l * 10)) * (Math.PI / 180);
 
     drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, false, false, params.strokeColor);
@@ -70,9 +70,12 @@ function drawSpiralPath(context, centerX, centerY, params, initialAngle, current
 
   let angle = initialAngle;
   const spiralType = params.spiralType;
-  let prevX, prevY;
+  let prevX = centerX; // Start at center
+  let prevY = centerY;
 
-  for (let i = 0; i < params.nodes; i++) {
+  context.moveTo(prevX, prevY); // Explicitly start at center
+
+  for (let i = 1; i < params.nodes; i++) { // Start from 1 since 0 is the center
     let r = spiralType === 'linear' ? currentScale * i : currentScale * Math.exp(0.1 * i);
     let x = centerX + Math.cos(angle) * r;
     let y = centerY + Math.sin(angle) * r;
@@ -80,9 +83,7 @@ function drawSpiralPath(context, centerX, centerY, params, initialAngle, current
     if (mirrorX) x = centerX * 2 - x;
     if (mirrorY) y = centerY * 2 - y;
 
-    if (i === 0) {
-      context.moveTo(x, y);
-    } else if (params.curvedLines) {
+    if (params.curvedLines) {
       const midX = (prevX + x) / 2;
       const midY = (prevY + y) / 2;
       context.quadraticCurveTo(prevX, prevY, midX, midY);
