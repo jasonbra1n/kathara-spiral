@@ -61,18 +61,18 @@ To run this project locally:
 
 ## Presets
 
-- **Golden Spiral**: A logarithmic spiral with 50 nodes, 10 layers, and golden-hued growth (ratio 6).
-- **Dense Mirror**: A dense, mirrored linear spiral with 50 nodes, 20 layers, and dashed lines (ratio 5.5).
-- **Minimalist**: A simple, single-layer spiral with 12 nodes and smooth curves (ratio 5).
-- **Star Burst**: A vibrant, fully mirrored spiral with 50 nodes, 5 layers, and auto-rotation (ratio 6.5).
-- **Double Helix**: A two-layer logarithmic spiral with 40 nodes and vertical mirroring (ratio 7).
+- **Golden Spiral**: A dense logarithmic spiral with 50 nodes, 50 layers, and a soft golden glow (ratio 4.8).
+- **Dense Mirror**: A tightly packed, mirrored linear spiral with 50 nodes, 80 layers, and dashed lines (ratio 4.6).
+- **Minimalist**: A subtle, three-layer spiral with 12 nodes and smooth curves (ratio 5).
+- **Star Burst**: A vibrant, fully mirrored spiral with 50 nodes, 40 layers, and auto-rotation (ratio 5.2).
+- **Double Helix**: A helical logarithmic spiral with 40 nodes, 20 layers, and vertical mirroring (ratio 5.5).
 - **Nebula**: A cosmic, semi-transparent spiral with 50 nodes, 100 layers, and a space-cloud effect (ratio 4.7).
-- **Kaleidoscope**: A mirrored, dashed-line spiral with 50 nodes, 8 layers, and auto-rotation (ratio 6).
-- **Cosmic Wave**: A flowing, auto-rotating spiral with 45 nodes, 10 layers, and logarithmic curves (ratio 5.8).
-- **Fractal Bloom**: A detailed, mirrored spiral with 50 nodes, 15 layers, and smooth curves (ratio 6.2).
-- **Crystal Vortex**: A sharp, logarithmic spiral with 40 nodes, 6 layers, and vertical mirroring (ratio 5.5).
-- **Galactic Pulse**: A bold, auto-rotating spiral with 50 nodes, 8 layers, and horizontal mirroring (ratio 6.5).
-- **Ethereal Rings**: A soft, dashed spiral with 30 nodes, 12 layers, and full mirroring (ratio 5.2).
+- **Kaleidoscope**: A mirrored, dashed spiral with 50 nodes, 60 layers, and auto-rotation (ratio 4.8).
+- **Cosmic Wave**: A flowing, auto-rotating spiral with 45 nodes, 70 layers, and logarithmic curves (ratio 4.5).
+- **Fractal Bloom**: A detailed, mirrored spiral with 50 nodes, 50 layers, and smooth curves (ratio 5.3).
+- **Crystal Vortex**: A sharp, logarithmic spiral with 40 nodes, 40 layers, and vertical mirroring (ratio 4.9).
+- **Galactic Pulse**: A bold, auto-rotating spiral with 50 nodes, 60 layers, and horizontal mirroring (ratio 5.1).
+- **Ethereal Rings**: A soft, dashed spiral with 30 nodes, 80 layers, and full mirroring (ratio 4.6).
 
 ## Contributing
 
