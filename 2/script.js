@@ -11,6 +11,7 @@ const defaultParams = {
   gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: false,
   audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false
 };
+let baseScale = defaultParams.scale; // Sync with defaultParams initially
 
 // -------------------------------
 // Responsive Canvas Setup
@@ -188,7 +189,6 @@ document.getElementById('presetSelector').addEventListener('change', function() 
 });
 
 
-
 function saveState() {
   const state = {};
   document.querySelectorAll('input, select').forEach(el => {
@@ -288,7 +288,6 @@ document.getElementById('autoRotate').addEventListener('change', function() {
 // -------------------------------
 let audioContext, analyser, dataArray;
 let isAudioAnimating = false;
-let baseScale = 30; // Default baseline, updated by presets or manual input
 
 async function initAudio() {
   try {
@@ -333,8 +332,8 @@ function animateAudioReactive() {
 
     if (currentParams.audioScale) {
       const currentScale = parseFloat(scaleInput.value) || baseScale;
-      const targetScale = baseScale + (amplitude * 100); // Boosted to +100 for sensitivity
-      const newScale = amplitude > 0.02 ? Math.max(currentScale, targetScale) : // Lower threshold to 0.02
+      const targetScale = baseScale + (amplitude * 100); // Max +100 from baseline
+      const newScale = amplitude > 0.02 ? Math.max(currentScale, targetScale) : // Lower threshold
                         currentScale + (baseScale - currentScale) * 0.1; // Decay back
       scaleInput.value = Math.min(Math.max(newScale, 1), 100);
       document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
@@ -356,19 +355,19 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   isAudioAnimating = this.checked;
   document.getElementById('audioOptions').style.display = this.checked ? 'block' : 'none';
   if (isAudioAnimating && !audioContext) {
-    baseScale = parseFloat(document.getElementById('scale').value) || 30; // Sync baseline on enable
+    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale; // Sync on enable
     initAudio().then(() => {
       animateAudioReactive();
     });
   } else if (isAudioAnimating) {
-    baseScale = parseFloat(document.getElementById('scale').value) || 30; // Update baseline
+    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale; // Update baseline
     animateAudioReactive();
   }
 });
 
 document.getElementById('audioScale').addEventListener('change', function() {
   if (this.checked) {
-    baseScale = parseFloat(document.getElementById('scale').value) || 30; // Set baseline when enabling
+    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale; // Sync on toggle
   }
 });
 
