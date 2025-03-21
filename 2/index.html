@@ -54,12 +54,13 @@
         <label><input type="checkbox" id="audioRotate"> Rotate</label>
         <label><input type="checkbox" id="audioScale"> Scale</label>
         <label><input type="checkbox" id="audioOpacity"> Opacity</label>
+        <label>Scale Gap: <input type="range" id="scaleGap" min="1" max="50" value="10"> <span id="scaleGapValue">10</span></label>
       </div>
     </div>
 
     <div class="control-group">
       <h3>Core Parameters</h3>
-      <label>Scale: <input type="range" id="scale" min="1" max="100" value="30"> <span id="scaleValue">30</span></label>
+      <label>Scale: <input type="range" id="scale" min="1" max="100" step="0.1" value="30"> <span id="scaleValue">30</span></label>
       <label>Nodes: <input type="range" id="nodes" min="5" max="50" value="12"> <span id="nodesValue">12</span></label>
       <label>Rotation: <input type="range" id="rotation" min="0" max="360" value="0"> <span id="rotationValue">0</span></label>
     </div>
