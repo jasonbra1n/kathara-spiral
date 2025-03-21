@@ -325,7 +325,7 @@ function animateAudioReactive() {
 
     if (currentParams.audioScale) {
       const scaleInput = document.getElementById('scale');
-      const baseScale = parseFloat(scaleInput.dataset.base) || 30;
+      const baseScale = parseFloat(scaleInput.value) || 30; // Use current value as base
       const fluctuation = amplitude * 50; // Max +50 scale
       scaleInput.value = Math.min(Math.max(baseScale + fluctuation, 1), 100);
       document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
@@ -333,8 +333,8 @@ function animateAudioReactive() {
 
     if (currentParams.audioOpacity) {
       const opacityInput = document.getElementById('opacity');
-      const baseOpacity = parseFloat(opacityInput.dataset.base) || 1;
-      const fluctuation = amplitude * 0.5; // Max -0.5 to +0.5
+      const baseOpacity = parseFloat(opacityInput.value) || 1; // Use current value as base
+      const fluctuation = amplitude * 0.5; // Max ±0.5 swing
       opacityInput.value = Math.min(Math.max(baseOpacity - fluctuation + 0.5, 0), 1);
       document.getElementById('opacityValue').textContent = opacityInput.value;
     }
@@ -349,14 +349,23 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   document.getElementById('audioOptions').style.display = this.checked ? 'block' : 'none';
   if (isAudioAnimating && !audioContext) {
     initAudio().then(() => {
-      // Store base values when enabling
-      document.getElementById('scale').dataset.base = document.getElementById('scale').value;
-      document.getElementById('opacity').dataset.base = document.getElementById('opacity').value;
       animateAudioReactive();
     });
   } else if (isAudioAnimating) {
     animateAudioReactive();
   }
+});
+
+// Allow manual adjustments during audio reactivity
+['scale', 'opacity'].forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener('input', function() {
+    if (currentParams.audioReactive) {
+      // Update the displayed value without interrupting audio animation
+      document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
+      drawSpiral();
+    }
+  });
 });
 
 // -------------------------------
