@@ -178,11 +178,16 @@ document.getElementById('presetSelector').addEventListener('change', function() 
         const numberInput = document.getElementById('layerRatioNumber');
         if (numberInput) numberInput.value = parseFloat(preset[key]).toFixed(1);
       }
+      if (key === 'scale') {
+        baseScale = parseFloat(preset[key]); // Sync baseScale with preset
+      }
     });
     saveState();
     drawSpiral();
   }
 });
+
+
 
 function saveState() {
   const state = {};
@@ -283,7 +288,7 @@ document.getElementById('autoRotate').addEventListener('change', function() {
 // -------------------------------
 let audioContext, analyser, dataArray;
 let isAudioAnimating = false;
-let baseScale = 30; // Default baseline, updated when enabling audioScale
+let baseScale = 30; // Default baseline, updated by presets or manual input
 
 async function initAudio() {
   try {
@@ -328,8 +333,8 @@ function animateAudioReactive() {
 
     if (currentParams.audioScale) {
       const currentScale = parseFloat(scaleInput.value) || baseScale;
-      const targetScale = baseScale + (amplitude * 50); // Max +50 from baseline
-      const newScale = amplitude > 0.05 ? Math.max(currentScale, targetScale) : // Jump up if sound
+      const targetScale = baseScale + (amplitude * 100); // Boosted to +100 for sensitivity
+      const newScale = amplitude > 0.02 ? Math.max(currentScale, targetScale) : // Lower threshold to 0.02
                         currentScale + (baseScale - currentScale) * 0.1; // Decay back
       scaleInput.value = Math.min(Math.max(newScale, 1), 100);
       document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
@@ -351,10 +356,12 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   isAudioAnimating = this.checked;
   document.getElementById('audioOptions').style.display = this.checked ? 'block' : 'none';
   if (isAudioAnimating && !audioContext) {
+    baseScale = parseFloat(document.getElementById('scale').value) || 30; // Sync baseline on enable
     initAudio().then(() => {
       animateAudioReactive();
     });
   } else if (isAudioAnimating) {
+    baseScale = parseFloat(document.getElementById('scale').value) || 30; // Update baseline
     animateAudioReactive();
   }
 });
