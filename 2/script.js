@@ -8,10 +8,19 @@ const defaultParams = {
   verticalMirror: false, horizontalMirror: false, strokeColor: '#00FFFF',
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
-  gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: false,
-  audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false
+  gradientStroke: true, dashEffect: false, curvedLines: false
+  // Removed audioReactive, autoRotate, etc. from defaults—they’re master settings now
 };
-let baseScale = defaultParams.scale; // Sync with defaultParams initially
+let baseScale = defaultParams.scale;
+
+// Master settings (persist across presets)
+let masterSettings = {
+  autoRotate: false,
+  audioReactive: false,
+  audioRotate: false,
+  audioScale: false,
+  audioOpacity: false
+};
 
 // -------------------------------
 // Responsive Canvas Setup
@@ -131,12 +140,8 @@ function updateParams() {
     bothColor: document.getElementById('bothColor').value,
     gradientStroke: document.getElementById('gradientStroke').checked,
     dashEffect: document.getElementById('dashEffect').checked,
-    autoRotate: document.getElementById('autoRotate').checked,
     curvedLines: document.getElementById('curvedLines').checked,
-    audioReactive: document.getElementById('audioReactive').checked,
-    audioRotate: document.getElementById('audioRotate').checked,
-    audioScale: document.getElementById('audioScale').checked,
-    audioOpacity: document.getElementById('audioOpacity').checked
+    ...masterSettings // Merge master settings
   };
 }
 
@@ -150,22 +155,22 @@ function drawSpiral() {
 // -------------------------------
 document.getElementById('presetSelector').addEventListener('change', function() {
   const presets = {
-    goldenSpiral: { scale: 25, nodes: 50, rotation: 0, layers: 50, layerRatio: 4.8, verticalMirror: true, horizontalMirror: false, strokeColor: '#FFD700', lineWidth: 1, opacity: 0.7, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#FF4500', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    denseMirror: { scale: 15, nodes: 50, rotation: 0, layers: 80, layerRatio: 4.6, verticalMirror: true, horizontalMirror: true, strokeColor: '#00FF00', lineWidth: 2, opacity: 0.8, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FF00', gradientStroke: false, dashEffect: true, autoRotate: false, curvedLines: false, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    minimalist: { scale: 30, nodes: 12, rotation: 0, layers: 3, layerRatio: 5, verticalMirror: false, horizontalMirror: false, strokeColor: '#FFFFFF', lineWidth: 1, opacity: 0.9, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: false, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    starBurst: { scale: 25, nodes: 50, rotation: 0, layers: 40, layerRatio: 5.2, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF69B4', lineWidth: 1, opacity: 0.85, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFA500', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: false, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    doubleHelix: { scale: 15, nodes: 40, rotation: 0, layers: 20, layerRatio: 5.5, verticalMirror: true, horizontalMirror: false, strokeColor: '#00CED1', lineWidth: 1, opacity: 0.9, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#9400D3', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    nebula: { scale: 20, nodes: 50, rotation: 0, layers: 100, layerRatio: 4.7, verticalMirror: false, horizontalMirror: true, strokeColor: '#8A2BE2', lineWidth: 2, opacity: 0.6, spiralType: 'logarithmic', backgroundColor: '#1A0033', verticalColor: '#FF00FF', horizontalColor: '#00CED1', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    kaleidoscope: { scale: 20, nodes: 50, rotation: 0, layers: 60, layerRatio: 4.8, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF1493', lineWidth: 2, opacity: 0.75, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FFFF', gradientStroke: false, dashEffect: true, autoRotate: true, curvedLines: false, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    cosmicWave: { scale: 40, nodes: 45, rotation: 0, layers: 70, layerRatio: 4.5, verticalMirror: false, horizontalMirror: true, strokeColor: '#00B7EB', lineWidth: 1, opacity: 0.9, spiralType: 'logarithmic', backgroundColor: '#0A1F44', verticalColor: '#FF00FF', horizontalColor: '#00CED1', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    fractalBloom: { scale: 15, nodes: 50, rotation: 0, layers: 50, layerRatio: 5.3, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF4500', lineWidth: 1, opacity: 0.65, spiralType: 'linear', backgroundColor: '#222222', verticalColor: '#FFD700', horizontalColor: '#FF69B4', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: false, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    crystalVortex: { scale: 25, nodes: 40, rotation: 0, layers: 40, layerRatio: 4.9, verticalMirror: true, horizontalMirror: false, strokeColor: '#00FFFF', lineWidth: 1, opacity: 0.8, spiralType: 'logarithmic', backgroundColor: '#0D1B2A', verticalColor: '#1E90FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    galacticPulse: { scale: 50, nodes: 50, rotation: 0, layers: 60, layerRatio: 5.1, verticalMirror: false, horizontalMirror: true, strokeColor: '#FF00FF', lineWidth: 2, opacity: 0.9, spiralType: 'linear', backgroundColor: '#000033', verticalColor: '#FF00FF', horizontalColor: '#00FF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: false, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    etherealRings: { scale: 30, nodes: 30, rotation: 0, layers: 80, layerRatio: 4.6, verticalMirror: true, horizontalMirror: true, strokeColor: '#E6E6FA', lineWidth: 1, opacity: 0.5, spiralType: 'logarithmic', backgroundColor: '#2A2A40', verticalColor: '#D8BFD8', horizontalColor: '#98FB98', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: true, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    violetBloom: { scale: 7, nodes: 50, rotation: 0, layers: 15, layerRatio: 4.2, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF00F7', lineWidth: 4, opacity: 0.8, spiralType: 'linear', backgroundColor: '#000000', verticalColor: '#FF00F7', horizontalColor: '#000000', bothColor: '#6E00DB', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: false, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    twilightPetals: { scale: 20, nodes: 40, rotation: 0, layers: 25, layerRatio: 4.8, verticalMirror: true, horizontalMirror: true, strokeColor: '#8A2BE2', lineWidth: 2, opacity: 0.7, spiralType: 'logarithmic', backgroundColor: '#1A0033', verticalColor: '#00CED1', horizontalColor: '#483D8B', bothColor: '#DDA0DD', gradientStroke: true, dashEffect: false, autoRotate: true, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    solarFlareBlossom: { scale: 12, nodes: 22, rotation: 0, layers: 32, layerRatio: 5.0, verticalMirror: true, horizontalMirror: true, strokeColor: '#FFF700', lineWidth: 10, opacity: 0.2, spiralType: 'linear', backgroundColor: '#000000', verticalColor: '#FFD700', horizontalColor: '#FFFF00', bothColor: '#FFA500', gradientStroke: true, dashEffect: true, autoRotate: true, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false },
-    midnightBloom: { scale: 10, nodes: 45, rotation: 0, layers: 30, layerRatio: 4.5, verticalMirror: true, horizontalMirror: true, strokeColor: '#191970', lineWidth: 2, opacity: 0.6, spiralType: 'logarithmic', backgroundColor: '#0A0A23', verticalColor: '#4B0082', horizontalColor: '#8A2BE2', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: true, autoRotate: false, curvedLines: true, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false }
+    goldenSpiral: { scale: 25, nodes: 50, rotation: 0, layers: 50, layerRatio: 4.8, verticalMirror: true, horizontalMirror: false, strokeColor: '#FFD700', lineWidth: 1, opacity: 0.7, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#FF4500', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, curvedLines: true },
+    denseMirror: { scale: 15, nodes: 50, rotation: 0, layers: 80, layerRatio: 4.6, verticalMirror: true, horizontalMirror: true, strokeColor: '#00FF00', lineWidth: 2, opacity: 0.8, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FF00', gradientStroke: false, dashEffect: true, curvedLines: false },
+    minimalist: { scale: 30, nodes: 12, rotation: 0, layers: 3, layerRatio: 5, verticalMirror: false, horizontalMirror: false, strokeColor: '#FFFFFF', lineWidth: 1, opacity: 0.9, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: false, curvedLines: true },
+    starBurst: { scale: 25, nodes: 50, rotation: 0, layers: 40, layerRatio: 5.2, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF69B4', lineWidth: 1, opacity: 0.85, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFA500', gradientStroke: true, dashEffect: false, curvedLines: false },
+    doubleHelix: { scale: 15, nodes: 40, rotation: 0, layers: 20, layerRatio: 5.5, verticalMirror: true, horizontalMirror: false, strokeColor: '#00CED1', lineWidth: 1, opacity: 0.9, spiralType: 'logarithmic', backgroundColor: '#111111', verticalColor: '#9400D3', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, curvedLines: true },
+    nebula: { scale: 20, nodes: 50, rotation: 0, layers: 100, layerRatio: 4.7, verticalMirror: false, horizontalMirror: true, strokeColor: '#8A2BE2', lineWidth: 2, opacity: 0.6, spiralType: 'logarithmic', backgroundColor: '#1A0033', verticalColor: '#FF00FF', horizontalColor: '#00CED1', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, curvedLines: true },
+    kaleidoscope: { scale: 20, nodes: 50, rotation: 0, layers: 60, layerRatio: 4.8, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF1493', lineWidth: 2, opacity: 0.75, spiralType: 'linear', backgroundColor: '#111111', verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#00FFFF', gradientStroke: false, dashEffect: true, curvedLines: false },
+    cosmicWave: { scale: 40, nodes: 45, rotation: 0, layers: 70, layerRatio: 4.5, verticalMirror: false, horizontalMirror: true, strokeColor: '#00B7EB', lineWidth: 1, opacity: 0.9, spiralType: 'logarithmic', backgroundColor: '#0A1F44', verticalColor: '#FF00FF', horizontalColor: '#00CED1', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, curvedLines: true },
+    fractalBloom: { scale: 15, nodes: 50, rotation: 0, layers: 50, layerRatio: 5.3, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF4500', lineWidth: 1, opacity: 0.65, spiralType: 'linear', backgroundColor: '#222222', verticalColor: '#FFD700', horizontalColor: '#FF69B4', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: false, curvedLines: true },
+    crystalVortex: { scale: 25, nodes: 40, rotation: 0, layers: 40, layerRatio: 4.9, verticalMirror: true, horizontalMirror: false, strokeColor: '#00FFFF', lineWidth: 1, opacity: 0.8, spiralType: 'logarithmic', backgroundColor: '#0D1B2A', verticalColor: '#1E90FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, curvedLines: true },
+    galacticPulse: { scale: 50, nodes: 50, rotation: 0, layers: 60, layerRatio: 5.1, verticalMirror: false, horizontalMirror: true, strokeColor: '#FF00FF', lineWidth: 2, opacity: 0.9, spiralType: 'linear', backgroundColor: '#000033', verticalColor: '#FF00FF', horizontalColor: '#00FF00', bothColor: '#FFFFFF', gradientStroke: true, dashEffect: false, curvedLines: false },
+    etherealRings: { scale: 30, nodes: 30, rotation: 0, layers: 80, layerRatio: 4.6, verticalMirror: true, horizontalMirror: true, strokeColor: '#E6E6FA', lineWidth: 1, opacity: 0.5, spiralType: 'logarithmic', backgroundColor: '#2A2A40', verticalColor: '#D8BFD8', horizontalColor: '#98FB98', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: true, curvedLines: true },
+    violetBloom: { scale: 7, nodes: 50, rotation: 0, layers: 15, layerRatio: 4.2, verticalMirror: true, horizontalMirror: true, strokeColor: '#FF00F7', lineWidth: 4, opacity: 0.8, spiralType: 'linear', backgroundColor: '#000000', verticalColor: '#FF00F7', horizontalColor: '#000000', bothColor: '#6E00DB', gradientStroke: true, dashEffect: false, curvedLines: false },
+    twilightPetals: { scale: 20, nodes: 40, rotation: 0, layers: 25, layerRatio: 4.8, verticalMirror: true, horizontalMirror: true, strokeColor: '#8A2BE2', lineWidth: 2, opacity: 0.7, spiralType: 'logarithmic', backgroundColor: '#1A0033', verticalColor: '#00CED1', horizontalColor: '#483D8B', bothColor: '#DDA0DD', gradientStroke: true, dashEffect: false, curvedLines: true },
+    solarFlareBlossom: { scale: 12, nodes: 22, rotation: 0, layers: 32, layerRatio: 5.0, verticalMirror: true, horizontalMirror: true, strokeColor: '#FFF700', lineWidth: 10, opacity: 0.2, spiralType: 'linear', backgroundColor: '#000000', verticalColor: '#FFD700', horizontalColor: '#FFFF00', bothColor: '#FFA500', gradientStroke: true, dashEffect: true, curvedLines: true },
+    midnightBloom: { scale: 10, nodes: 45, rotation: 0, layers: 30, layerRatio: 4.5, verticalMirror: true, horizontalMirror: true, strokeColor: '#191970', lineWidth: 2, opacity: 0.6, spiralType: 'logarithmic', backgroundColor: '#0A0A23', verticalColor: '#4B0082', horizontalColor: '#8A2BE2', bothColor: '#FFFFFF', gradientStroke: false, dashEffect: true, curvedLines: true }
   };
   const preset = presets[this.value];
   if (preset) {
@@ -180,14 +185,19 @@ document.getElementById('presetSelector').addEventListener('change', function() 
         if (numberInput) numberInput.value = parseFloat(preset[key]).toFixed(1);
       }
       if (key === 'scale') {
-        baseScale = parseFloat(preset[key]); // Sync baseScale with preset
+        baseScale = parseFloat(preset[key]);
       }
     });
+    // Reapply master settings after preset load
+    document.getElementById('autoRotate').checked = masterSettings.autoRotate;
+    document.getElementById('audioReactive').checked = masterSettings.audioReactive;
+    document.getElementById('audioRotate').checked = masterSettings.audioRotate;
+    document.getElementById('audioScale').checked = masterSettings.audioScale;
+    document.getElementById('audioOpacity').checked = masterSettings.audioOpacity;
     saveState();
     drawSpiral();
   }
 });
-
 
 function saveState() {
   const state = {};
@@ -208,7 +218,14 @@ function undo() {
       else el.value = lastState[key];
       const valueSpan = document.getElementById(key + 'Value');
       if (valueSpan) valueSpan.textContent = lastState[key];
+      if (key === 'scale') baseScale = parseFloat(lastState[key]);
     });
+    // Restore master settings from current state
+    masterSettings.autoRotate = document.getElementById('autoRotate').checked;
+    masterSettings.audioReactive = document.getElementById('audioReactive').checked;
+    masterSettings.audioRotate = document.getElementById('audioRotate').checked;
+    masterSettings.audioScale = document.getElementById('audioScale').checked;
+    masterSettings.audioOpacity = document.getElementById('audioOpacity').checked;
     drawSpiral();
   }
 }
@@ -220,7 +237,15 @@ function reset() {
     else el.value = defaultParams[key];
     const valueSpan = document.getElementById(key + 'Value');
     if (valueSpan) valueSpan.textContent = defaultParams[key];
+    if (key === 'scale') baseScale = defaultParams[key];
   });
+  // Reset master settings
+  masterSettings = { autoRotate: false, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false };
+  document.getElementById('autoRotate').checked = false;
+  document.getElementById('audioReactive').checked = false;
+  document.getElementById('audioRotate').checked = false;
+  document.getElementById('audioScale').checked = false;
+  document.getElementById('audioOpacity').checked = false;
   history = [];
   drawSpiral();
 }
@@ -245,6 +270,7 @@ document.querySelectorAll('input, select').forEach(input => {
       const valueSpan = document.getElementById('layerRatioValue');
       if (valueSpan) valueSpan.textContent = value.toFixed(1);
     }
+    if (this.id === 'scale') baseScale = parseFloat(this.value);
     drawSpiral();
   });
 
@@ -279,6 +305,7 @@ function animateRotation() {
 }
 
 document.getElementById('autoRotate').addEventListener('change', function() {
+  masterSettings.autoRotate = this.checked;
   isAnimating = this.checked;
   if (isAnimating) animateRotation();
 });
@@ -295,8 +322,8 @@ async function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
     analyser = audioContext.createAnalyser();
-    analyser.fftSize = 64; // Smaller FFT for faster response to claps
-    analyser.smoothingTimeConstant = 0.3; // Less smoothing for sharper peaks
+    analyser.fftSize = 64;
+    analyser.smoothingTimeConstant = 0.3;
     source.connect(analyser);
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     console.log('Audio initialized');
@@ -311,10 +338,10 @@ function getAudioAmplitude() {
   analyser.getByteTimeDomainData(dataArray);
   let max = 0;
   for (let i = 0; i < dataArray.length; i++) {
-    const a = Math.abs(dataArray[i] / 128 - 1); // Absolute deviation from center
-    max = Math.max(max, a); // Peak amplitude instead of RMS for claps
+    const a = Math.abs(dataArray[i] / 128 - 1);
+    max = Math.max(max, a);
   }
-  return max; // 0 to ~1, sensitive to sharp peaks
+  return max;
 }
 
 function animateAudioReactive() {
@@ -332,10 +359,10 @@ function animateAudioReactive() {
     }
 
     if (currentParams.audioScale) {
-      const currentScale = parseFloat(scaleInput.value) || baseScale;
-      const targetScale = baseScale + (amplitude * 100); // Max +100
-      const newScale = amplitude > 0.05 ? Math.min(Math.max(targetScale, baseScale), 100) : // Jump up, cap at 100
-                        currentScale + (baseScale - currentScale) * 0.1; // Decay to exact baseScale
+      const currentScale = parseFloat(scaleInput.value);
+      const targetScale = baseScale + (amplitude * 100);
+      const newScale = amplitude > 0.05 ? Math.min(Math.max(targetScale, baseScale), 100) :
+                        currentScale + (baseScale - currentScale) * 0.05; // Slower decay for precision
       scaleInput.value = newScale;
       document.getElementById('scaleValue').textContent = Math.round(newScale);
     }
@@ -353,6 +380,7 @@ function animateAudioReactive() {
 }
 
 document.getElementById('audioReactive').addEventListener('change', function() {
+  masterSettings.audioReactive = this.checked;
   isAudioAnimating = this.checked;
   document.getElementById('audioOptions').style.display = this.checked ? 'block' : 'none';
   if (isAudioAnimating && !audioContext) {
@@ -367,9 +395,18 @@ document.getElementById('audioReactive').addEventListener('change', function() {
 });
 
 document.getElementById('audioScale').addEventListener('change', function() {
+  masterSettings.audioScale = this.checked;
   if (this.checked) {
     baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale;
   }
+});
+
+document.getElementById('audioRotate').addEventListener('change', function() {
+  masterSettings.audioRotate = this.checked;
+});
+
+document.getElementById('audioOpacity').addEventListener('change', function() {
+  masterSettings.audioOpacity = this.checked;
 });
 
 // Allow manual adjustments during audio reactivity
@@ -378,14 +415,13 @@ document.getElementById('audioScale').addEventListener('change', function() {
   input.addEventListener('input', function() {
     if (currentParams.audioReactive) {
       if (id === 'scale' && currentParams.audioScale) {
-        baseScale = parseFloat(this.value); // Update baseline live
+        baseScale = parseFloat(this.value);
       }
       document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
       drawSpiral();
     }
   });
 });
-
 
 // -------------------------------
 // Mobile Touch Controls
@@ -422,6 +458,7 @@ function handleTouchMove(e) {
     const scaleInput = document.getElementById('scale');
     const newScale = initialScale * (currentDistance / initialPinchDistance);
     scaleInput.value = Math.min(Math.max(newScale, 1), 100);
+    baseScale = parseFloat(scaleInput.value); // Update baseScale on pinch
     document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
     saveState();
     drawSpiral();
