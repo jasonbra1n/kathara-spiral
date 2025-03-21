@@ -295,7 +295,8 @@ async function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
     analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;
+    analyser.fftSize = 64; // Smaller FFT for faster response to claps
+    analyser.smoothingTimeConstant = 0.3; // Less smoothing for sharper peaks
     source.connect(analyser);
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     console.log('Audio initialized');
@@ -308,12 +309,12 @@ async function initAudio() {
 function getAudioAmplitude() {
   if (!analyser) return 0;
   analyser.getByteTimeDomainData(dataArray);
-  let sum = 0;
+  let max = 0;
   for (let i = 0; i < dataArray.length; i++) {
-    const a = dataArray[i] / 128 - 1; // Normalize to -1 to 1
-    sum += a * a;
+    const a = Math.abs(dataArray[i] / 128 - 1); // Absolute deviation from center
+    max = Math.max(max, a); // Peak amplitude instead of RMS for claps
   }
-  return Math.sqrt(sum / dataArray.length); // RMS amplitude
+  return max; // 0 to ~1, sensitive to sharp peaks
 }
 
 function animateAudioReactive() {
@@ -325,23 +326,23 @@ function animateAudioReactive() {
 
     if (currentParams.audioRotate) {
       let baseRotation = parseFloat(rotationInput.value) || 0;
-      const fluctuation = amplitude * 180; // Max 180° swing
+      const fluctuation = amplitude * 180;
       rotationInput.value = (baseRotation + fluctuation) % 360;
       document.getElementById('rotationValue').textContent = Math.round(rotationInput.value);
     }
 
     if (currentParams.audioScale) {
       const currentScale = parseFloat(scaleInput.value) || baseScale;
-      const targetScale = baseScale + (amplitude * 100); // Max +100 from baseline
-      const newScale = amplitude > 0.02 ? Math.max(currentScale, targetScale) : // Lower threshold
-                        currentScale + (baseScale - currentScale) * 0.1; // Decay back
-      scaleInput.value = Math.min(Math.max(newScale, 1), 100);
-      document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
+      const targetScale = baseScale + (amplitude * 100); // Max +100
+      const newScale = amplitude > 0.05 ? Math.min(Math.max(targetScale, baseScale), 100) : // Jump up, cap at 100
+                        currentScale + (baseScale - currentScale) * 0.1; // Decay to exact baseScale
+      scaleInput.value = newScale;
+      document.getElementById('scaleValue').textContent = Math.round(newScale);
     }
 
     if (currentParams.audioOpacity) {
       const baseOpacity = parseFloat(opacityInput.value) || 1;
-      const fluctuation = amplitude * 0.5; // Max ±0.5 swing
+      const fluctuation = amplitude * 0.5;
       opacityInput.value = Math.min(Math.max(baseOpacity - fluctuation + 0.5, 0), 1);
       document.getElementById('opacityValue').textContent = opacityInput.value;
     }
@@ -355,19 +356,19 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   isAudioAnimating = this.checked;
   document.getElementById('audioOptions').style.display = this.checked ? 'block' : 'none';
   if (isAudioAnimating && !audioContext) {
-    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale; // Sync on enable
+    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale;
     initAudio().then(() => {
       animateAudioReactive();
     });
   } else if (isAudioAnimating) {
-    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale; // Update baseline
+    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale;
     animateAudioReactive();
   }
 });
 
 document.getElementById('audioScale').addEventListener('change', function() {
   if (this.checked) {
-    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale; // Sync on toggle
+    baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale;
   }
 });
 
@@ -377,7 +378,7 @@ document.getElementById('audioScale').addEventListener('change', function() {
   input.addEventListener('input', function() {
     if (currentParams.audioReactive) {
       if (id === 'scale' && currentParams.audioScale) {
-        baseScale = parseFloat(this.value); // Update baseline on manual adjust
+        baseScale = parseFloat(this.value); // Update baseline live
       }
       document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
       drawSpiral();
