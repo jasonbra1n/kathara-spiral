@@ -283,6 +283,7 @@ document.getElementById('autoRotate').addEventListener('change', function() {
 // -------------------------------
 let audioContext, analyser, dataArray;
 let isAudioAnimating = false;
+let baseScale = 30; // Default baseline, updated when enabling audioScale
 
 async function initAudio() {
   try {
@@ -314,9 +315,11 @@ function getAudioAmplitude() {
 function animateAudioReactive() {
   if (isAudioAnimating && currentParams.audioReactive) {
     const amplitude = getAudioAmplitude();
-    
+    const scaleInput = document.getElementById('scale');
+    const rotationInput = document.getElementById('rotation');
+    const opacityInput = document.getElementById('opacity');
+
     if (currentParams.audioRotate) {
-      const rotationInput = document.getElementById('rotation');
       let baseRotation = parseFloat(rotationInput.value) || 0;
       const fluctuation = amplitude * 180; // Max 180° swing
       rotationInput.value = (baseRotation + fluctuation) % 360;
@@ -324,16 +327,16 @@ function animateAudioReactive() {
     }
 
     if (currentParams.audioScale) {
-      const scaleInput = document.getElementById('scale');
-      const baseScale = parseFloat(scaleInput.value) || 30; // Use current value as base
-      const fluctuation = amplitude * 50; // Max +50 scale
-      scaleInput.value = Math.min(Math.max(baseScale + fluctuation, 1), 100);
+      const currentScale = parseFloat(scaleInput.value) || baseScale;
+      const targetScale = baseScale + (amplitude * 50); // Max +50 from baseline
+      const newScale = amplitude > 0.05 ? Math.max(currentScale, targetScale) : // Jump up if sound
+                        currentScale + (baseScale - currentScale) * 0.1; // Decay back
+      scaleInput.value = Math.min(Math.max(newScale, 1), 100);
       document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
     }
 
     if (currentParams.audioOpacity) {
-      const opacityInput = document.getElementById('opacity');
-      const baseOpacity = parseFloat(opacityInput.value) || 1; // Use current value as base
+      const baseOpacity = parseFloat(opacityInput.value) || 1;
       const fluctuation = amplitude * 0.5; // Max ±0.5 swing
       opacityInput.value = Math.min(Math.max(baseOpacity - fluctuation + 0.5, 0), 1);
       document.getElementById('opacityValue').textContent = opacityInput.value;
@@ -356,17 +359,26 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   }
 });
 
+document.getElementById('audioScale').addEventListener('change', function() {
+  if (this.checked) {
+    baseScale = parseFloat(document.getElementById('scale').value) || 30; // Set baseline when enabling
+  }
+});
+
 // Allow manual adjustments during audio reactivity
 ['scale', 'opacity'].forEach(id => {
   const input = document.getElementById(id);
   input.addEventListener('input', function() {
     if (currentParams.audioReactive) {
-      // Update the displayed value without interrupting audio animation
+      if (id === 'scale' && currentParams.audioScale) {
+        baseScale = parseFloat(this.value); // Update baseline on manual adjust
+      }
       document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
       drawSpiral();
     }
   });
 });
+
 
 // -------------------------------
 // Mobile Touch Controls
