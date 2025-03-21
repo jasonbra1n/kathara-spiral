@@ -416,15 +416,37 @@ document.getElementById('scaleSensitivity')?.addEventListener('input', function(
 // Controls Toggle
 // -------------------------------
 const controlsOverlay = document.getElementById('controlsOverlay');
-document.getElementById('toggleControls').addEventListener('click', function() {
+const toggleButton = document.getElementById('toggleControls');
+const controlsNotice = document.createElement('div');
+controlsNotice.id = 'controlsNotice';
+controlsNotice.className = 'controls-notice';
+document.body.appendChild(controlsNotice);
+
+toggleButton.addEventListener('click', function() {
   if (controlsOverlay.style.display === 'none') {
     controlsOverlay.style.display = 'block';
     this.textContent = 'Hide Controls';
   } else {
     controlsOverlay.style.display = 'none';
     this.textContent = 'Show Controls';
+    showControlsNotice();
   }
 });
+
+canvas.addEventListener('click', function(e) {
+  if (controlsOverlay.style.display === 'none' && !document.fullscreenElement) {
+    controlsOverlay.style.display = 'block';
+    toggleButton.textContent = 'Hide Controls';
+  }
+});
+
+function showControlsNotice() {
+  controlsNotice.textContent = 'Click anywhere to show controls';
+  controlsNotice.style.display = 'block';
+  setTimeout(() => {
+    controlsNotice.style.display = 'none';
+  }, 3000);
+}
 
 // -------------------------------
 // Mobile Touch Controls
@@ -524,15 +546,15 @@ fullscreenButton.addEventListener('click', () => {
   if (canvas.requestFullscreen) {
     canvas.requestFullscreen();
     showFullscreenOverlay();
-    controlsOverlay.style.display = 'none'; // Hide controls in fullscreen
+    controlsOverlay.style.display = 'none';
   }
 });
 
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement) {
     fullscreenOverlay.style.display = 'none';
-    controlsOverlay.style.display = 'block'; // Show controls when exiting fullscreen
-    document.getElementById('toggleControls').textContent = 'Hide Controls';
+    controlsOverlay.style.display = 'block';
+    toggleButton.textContent = 'Hide Controls';
   }
 });
 
