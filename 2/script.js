@@ -162,8 +162,8 @@ document.getElementById('presetSelector').addEventListener('change', function() 
       }
       if (key === 'scale') {
         baseScale = parseFloat(preset[key]);
-        document.getElementById('scale').value = baseScale; // Sync slider
-        document.getElementById('scaleValue').textContent = baseScale; // Sync display
+        document.getElementById('scale').value = baseScale;
+        document.getElementById('scaleValue').textContent = baseScale;
       }
     });
     saveState();
@@ -234,7 +234,9 @@ document.querySelectorAll('input, select').forEach(input => {
       const valueSpan = document.getElementById('layerRatioValue');
       if (valueSpan) valueSpan.textContent = value.toFixed(1);
     }
-    if (this.id === 'scale') baseScale = parseFloat(this.value);
+    if (this.id === 'scale' && !currentParams.audioReactive) {
+      baseScale = parseFloat(this.value); // Only update baseScale if not audio reactive
+    }
     drawSpiral();
   });
 
@@ -327,9 +329,8 @@ function animateAudioReactive() {
       if (amplitude > 0.05) {
         newScale = Math.min(Math.max(targetScale, baseScale), 100);
       } else {
-        // Faster decay to snap to baseScale exactly
         newScale = currentScale + (baseScale - currentScale) * 0.2;
-        if (Math.abs(newScale - baseScale) < 0.1) newScale = baseScale; // Snap to baseScale
+        if (Math.abs(newScale - baseScale) < 0.5) newScale = baseScale; // Snap closer
       }
       scaleInput.value = newScale;
       document.getElementById('scaleValue').textContent = Math.round(newScale);
@@ -356,10 +357,9 @@ document.getElementById('audioReactive').addEventListener('change', function() {
       animateAudioReactive();
     });
   } else if (this.checked) {
-    baseScale = parseFloat(document.getElementById('scale').value); // Reset baseScale on re-enable
+    baseScale = parseFloat(document.getElementById('scale').value); // Reset baseScale
     animateAudioReactive();
   } else {
-    // Reset scale to baseScale when disabling
     document.getElementById('scale').value = baseScale;
     document.getElementById('scaleValue').textContent = Math.round(baseScale);
     drawSpiral();
@@ -368,8 +368,10 @@ document.getElementById('audioReactive').addEventListener('change', function() {
 
 document.getElementById('audioScale').addEventListener('change', function() {
   currentParams.audioScale = this.checked;
-  if (this.checked) {
-    baseScale = parseFloat(document.getElementById('scale').value); // Sync baseScale
+  if (!this.checked) {
+    // Reset scale to baseScale when disabling audioScale
+    document.getElementById('scale').value = baseScale;
+    document.getElementById('scaleValue').textContent = Math.round(baseScale);
   }
   drawSpiral();
 });
@@ -388,13 +390,11 @@ document.getElementById('audioOpacity').addEventListener('change', function() {
 ['scale', 'opacity'].forEach(id => {
   const input = document.getElementById(id);
   input.addEventListener('input', function() {
-    if (currentParams.audioReactive) {
-      if (id === 'scale' && currentParams.audioScale) {
-        baseScale = parseFloat(this.value); // Update baseScale live
-      }
-      document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
-      drawSpiral();
+    if (currentParams.audioReactive && id === 'scale' && !currentParams.audioScale) {
+      baseScale = parseFloat(this.value); // Only update baseScale if audioScale is off
     }
+    document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
+    drawSpiral();
   });
 });
 
@@ -433,7 +433,9 @@ function handleTouchMove(e) {
     const scaleInput = document.getElementById('scale');
     const newScale = initialScale * (currentDistance / initialPinchDistance);
     scaleInput.value = Math.min(Math.max(newScale, 1), 100);
-    baseScale = parseFloat(scaleInput.value); // Update baseScale on pinch
+    if (!currentParams.audioReactive || !currentParams.audioScale) {
+      baseScale = parseFloat(scaleInput.value); // Update baseScale only if not audio reactive
+    }
     document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
     saveState();
     drawSpiral();
