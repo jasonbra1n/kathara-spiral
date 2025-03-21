@@ -3,7 +3,7 @@ body {
   padding: 0;
   font-family: Arial, sans-serif;
   background-color: #111111;
-  overflow: hidden; /* Prevent body scroll with overlay */
+  overflow: hidden;
 }
 
 #spiralCanvas {
@@ -12,7 +12,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1; /* Canvas behind overlay */
+  z-index: 1;
 }
 
 .controls-overlay {
@@ -25,8 +25,8 @@ body {
   color: white;
   padding: 20px;
   border-radius: 10px;
-  z-index: 2; /* Overlay above canvas */
-  overflow-y: auto; /* Scrollable if too tall */
+  z-index: 2;
+  overflow-y: auto;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -47,7 +47,7 @@ body {
 }
 
 .controls {
-  margin-top: 40px; /* Space for toggle button */
+  margin-top: 40px;
 }
 
 .control-group {
@@ -116,7 +116,8 @@ button:hover {
   margin-top: 20px;
 }
 
-.fullscreen-overlay {
+.fullscreen-overlay,
+.controls-notice {
   display: none;
   position: fixed;
   top: 50%;
@@ -126,5 +127,5 @@ button:hover {
   color: white;
   padding: 10px 20px;
   border-radius: 5px;
-  z-index: 3; /* Above everything in fullscreen */
+  z-index: 3;
 }
