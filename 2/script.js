@@ -9,7 +9,7 @@ const defaultParams = {
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
   gradientStroke: true, dashEffect: false, curvedLines: false,
-  scaleGap: 10 // Default gap
+  scaleGap: 10, scaleSensitivity: 1 // Defaults
 };
 let baseScale = defaultParams.scale;
 
@@ -137,7 +137,8 @@ function updateParams() {
     audioRotate: document.getElementById('audioRotate').checked,
     audioScale: document.getElementById('audioScale').checked,
     audioOpacity: document.getElementById('audioOpacity').checked,
-    scaleGap: parseFloat(document.getElementById('scaleGap')?.value || defaultParams.scaleGap)
+    scaleGap: parseFloat(document.getElementById('scaleGap')?.value || defaultParams.scaleGap),
+    scaleSensitivity: parseFloat(document.getElementById('scaleSensitivity')?.value || defaultParams.scaleSensitivity)
   };
 }
 
@@ -216,6 +217,8 @@ function reset() {
   document.getElementById('audioOpacity').checked = false;
   document.getElementById('scaleGap').value = defaultParams.scaleGap;
   document.getElementById('scaleGapValue').textContent = defaultParams.scaleGap;
+  document.getElementById('scaleSensitivity').value = defaultParams.scaleSensitivity;
+  document.getElementById('scaleSensitivityValue').textContent = defaultParams.scaleSensitivity;
   history = [];
   drawSpiral();
 }
@@ -336,12 +339,13 @@ function animateAudioReactive() {
       const currentScale = parseFloat(scaleInput.value);
       let targetScale;
       if (amplitude > 0.05) {
-        targetScale = baseScale + (amplitude * currentParams.scaleGap);
+        const adjustedAmplitude = amplitude * currentParams.scaleSensitivity;
+        targetScale = baseScale + (adjustedAmplitude * currentParams.scaleGap);
         targetScale = Math.min(Math.max(targetScale, baseScale), baseScale + currentParams.scaleGap);
       } else {
         targetScale = baseScale;
       }
-      const newScale = lerp(currentScale, targetScale, 0.1); // Smooth transition
+      const newScale = lerp(currentScale, targetScale, 0.1);
       scaleInput.value = newScale;
       document.getElementById('scaleValue').textContent = newScale.toFixed(1);
     }
@@ -398,6 +402,12 @@ document.getElementById('audioOpacity').addEventListener('change', function() {
 document.getElementById('scaleGap')?.addEventListener('input', function() {
   currentParams.scaleGap = parseFloat(this.value);
   document.getElementById('scaleGapValue').textContent = this.value;
+  drawSpiral();
+});
+
+document.getElementById('scaleSensitivity')?.addEventListener('input', function() {
+  currentParams.scaleSensitivity = parseFloat(this.value);
+  document.getElementById('scaleSensitivityValue').textContent = this.value;
   drawSpiral();
 });
 
