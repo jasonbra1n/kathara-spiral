@@ -8,7 +8,8 @@ const defaultParams = {
   verticalMirror: false, horizontalMirror: false, strokeColor: '#00FFFF',
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
-  gradientStroke: true, dashEffect: false, curvedLines: false
+  gradientStroke: true, dashEffect: false, curvedLines: false,
+  scaleGap: 10 // Default gap
 };
 let baseScale = defaultParams.scale;
 
@@ -135,7 +136,8 @@ function updateParams() {
     audioReactive: document.getElementById('audioReactive').checked,
     audioRotate: document.getElementById('audioRotate').checked,
     audioScale: document.getElementById('audioScale').checked,
-    audioOpacity: document.getElementById('audioOpacity').checked
+    audioOpacity: document.getElementById('audioOpacity').checked,
+    scaleGap: parseFloat(document.getElementById('scaleGap')?.value || defaultParams.scaleGap)
   };
 }
 
@@ -163,8 +165,7 @@ document.getElementById('presetSelector').addEventListener('change', function() 
       if (key === 'scale') {
         baseScale = parseFloat(preset[key]);
         document.getElementById('scale').value = baseScale;
-        document.getElementById('scaleValue').textContent = baseScale;
-        console.log(`Preset loaded: baseScale set to ${baseScale}`);
+        document.getElementById('scaleValue').textContent = baseScale.toFixed(1);
       }
     });
     saveState();
@@ -200,17 +201,21 @@ function undo() {
 function reset() {
   Object.keys(defaultParams).forEach(key => {
     const el = document.getElementById(key);
-    if (el.type === 'checkbox') el.checked = defaultParams[key];
-    else el.value = defaultParams[key];
-    const valueSpan = document.getElementById(key + 'Value');
-    if (valueSpan) valueSpan.textContent = defaultParams[key];
-    if (key === 'scale') baseScale = defaultParams[key];
+    if (el) {
+      if (el.type === 'checkbox') el.checked = defaultParams[key];
+      else el.value = defaultParams[key];
+      const valueSpan = document.getElementById(key + 'Value');
+      if (valueSpan) valueSpan.textContent = defaultParams[key];
+      if (key === 'scale') baseScale = defaultParams[key];
+    }
   });
   document.getElementById('autoRotate').checked = false;
   document.getElementById('audioReactive').checked = false;
   document.getElementById('audioRotate').checked = false;
   document.getElementById('audioScale').checked = false;
   document.getElementById('audioOpacity').checked = false;
+  document.getElementById('scaleGap').value = defaultParams.scaleGap;
+  document.getElementById('scaleGapValue').textContent = defaultParams.scaleGap;
   history = [];
   drawSpiral();
 }
@@ -237,7 +242,6 @@ document.querySelectorAll('input, select').forEach(input => {
     }
     if (this.id === 'scale' && !currentParams.audioReactive) {
       baseScale = parseFloat(this.value);
-      console.log(`Manual scale adjust: baseScale set to ${baseScale}`);
     }
     drawSpiral();
   });
@@ -310,6 +314,10 @@ function getAudioAmplitude() {
   return max;
 }
 
+function lerp(start, end, t) {
+  return start + (end - start) * t;
+}
+
 function animateAudioReactive() {
   if (currentParams.audioReactive) {
     const amplitude = getAudioAmplitude();
@@ -326,16 +334,16 @@ function animateAudioReactive() {
 
     if (currentParams.audioScale) {
       const currentScale = parseFloat(scaleInput.value);
-      let newScale;
+      let targetScale;
       if (amplitude > 0.05) {
-        const targetScale = baseScale + (amplitude * 100);
-        newScale = Math.min(Math.max(targetScale, baseScale), 100);
+        targetScale = baseScale + (amplitude * currentParams.scaleGap);
+        targetScale = Math.min(Math.max(targetScale, baseScale), baseScale + currentParams.scaleGap);
       } else {
-        newScale = baseScale; // Force exact baseScale when silent
+        targetScale = baseScale;
       }
+      const newScale = lerp(currentScale, targetScale, 0.1); // Smooth transition
       scaleInput.value = newScale;
-      document.getElementById('scaleValue').textContent = Math.round(newScale);
-      console.log(`Audio reactive: baseScale=${baseScale}, currentScale=${currentScale}, newScale=${newScale}, amplitude=${amplitude}`);
+      document.getElementById('scaleValue').textContent = newScale.toFixed(1);
     }
 
     if (currentParams.audioOpacity) {
@@ -355,18 +363,15 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   document.getElementById('audioOptions').style.display = this.checked ? 'block' : 'none';
   if (this.checked && !audioContext) {
     baseScale = parseFloat(document.getElementById('scale').value);
-    console.log(`Audio reactive enabled: baseScale locked to ${baseScale}`);
     initAudio().then(() => {
       animateAudioReactive();
     });
   } else if (this.checked) {
     baseScale = parseFloat(document.getElementById('scale').value);
-    console.log(`Audio reactive re-enabled: baseScale reset to ${baseScale}`);
     animateAudioReactive();
   } else {
     document.getElementById('scale').value = baseScale;
-    document.getElementById('scaleValue').textContent = Math.round(baseScale);
-    console.log(`Audio reactive disabled: scale reset to baseScale=${baseScale}`);
+    document.getElementById('scaleValue').textContent = baseScale.toFixed(1);
     drawSpiral();
   }
 });
@@ -375,8 +380,7 @@ document.getElementById('audioScale').addEventListener('change', function() {
   currentParams.audioScale = this.checked;
   if (!this.checked) {
     document.getElementById('scale').value = baseScale;
-    document.getElementById('scaleValue').textContent = Math.round(baseScale);
-    console.log(`Audio scale disabled: scale reset to baseScale=${baseScale}`);
+    document.getElementById('scaleValue').textContent = baseScale.toFixed(1);
   }
   drawSpiral();
 });
@@ -391,15 +395,20 @@ document.getElementById('audioOpacity').addEventListener('change', function() {
   drawSpiral();
 });
 
+document.getElementById('scaleGap')?.addEventListener('input', function() {
+  currentParams.scaleGap = parseFloat(this.value);
+  document.getElementById('scaleGapValue').textContent = this.value;
+  drawSpiral();
+});
+
 // Allow manual adjustments during audio reactivity
 ['scale', 'opacity'].forEach(id => {
   const input = document.getElementById(id);
   input.addEventListener('input', function() {
     if (currentParams.audioReactive && id === 'scale' && !currentParams.audioScale) {
       baseScale = parseFloat(this.value);
-      console.log(`Manual adjust during audio reactive (audioScale off): baseScale set to ${baseScale}`);
     }
-    document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
+    document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : parseFloat(this.value).toFixed(1);
     drawSpiral();
   });
 });
@@ -413,7 +422,7 @@ let touchStartTime = null;
 const TAP_THRESHOLD = 200;
 
 canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
-canvas.addEventListener('touchmove', handleTouchMove, { passive: false }); // Non-passive due to preventDefault
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 
 function handleTouchStart(e) {
   if (document.fullscreenElement && isMobile) {
@@ -429,7 +438,7 @@ function handleTouchStart(e) {
 }
 
 function handleTouchMove(e) {
-  e.preventDefault(); // Needed for pinch/rotate control
+  e.preventDefault();
   if (e.touches.length === 2 && initialPinchDistance) {
     const currentDistance = Math.hypot(
       e.touches[0].pageX - e.touches[1].pageX,
@@ -440,9 +449,8 @@ function handleTouchMove(e) {
     scaleInput.value = Math.min(Math.max(newScale, 1), 100);
     if (!currentParams.audioReactive || !currentParams.audioScale) {
       baseScale = parseFloat(scaleInput.value);
-      console.log(`Pinch adjust: baseScale set to ${baseScale}`);
     }
-    document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
+    document.getElementById('scaleValue').textContent = parseFloat(scaleInput.value).toFixed(1);
     saveState();
     drawSpiral();
   } else if (e.touches.length === 1) {
