@@ -46,19 +46,23 @@
       </div>
     </div>
 
-<div class="control-group">
-  <h3>Core Parameters</h3>
-  <label>Scale: <input type="range" id="scale" min="1" max="100" value="30"> <span id="scaleValue">30</span></label>
-  <label>Nodes: <input type="range" id="nodes" min="5" max="50" value="12"> <span id="nodesValue">12</span></label>
-  <label>Rotation: <input type="range" id="rotation" min="0" max="360" value="0"> <span id="rotationValue">0</span></label>
-  <label>Auto-Rotate: <input type="checkbox" id="autoRotate"></label>
-  <label>Audio Reactive: <input type="checkbox" id="audioReactive"></label>
-  <div id="audioOptions" style="display: none; margin-left: 20px;">
-    <label><input type="checkbox" id="audioRotate"> Rotate</label>
-    <label><input type="checkbox" id="audioScale"> Scale</label>
-    <label><input type="checkbox" id="audioOpacity"> Opacity</label>
-  </div>
-</div>
+    <div class="control-group">
+      <h3>Master Settings</h3>
+      <label>Auto-Rotate: <input type="checkbox" id="autoRotate"></label>
+      <label>Audio Reactive: <input type="checkbox" id="audioReactive"></label>
+      <div id="audioOptions" style="display: none; margin-left: 20px;">
+        <label><input type="checkbox" id="audioRotate"> Rotate</label>
+        <label><input type="checkbox" id="audioScale"> Scale</label>
+        <label><input type="checkbox" id="audioOpacity"> Opacity</label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Core Parameters</h3>
+      <label>Scale: <input type="range" id="scale" min="1" max="100" value="30"> <span id="scaleValue">30</span></label>
+      <label>Nodes: <input type="range" id="nodes" min="5" max="50" value="12"> <span id="nodesValue">12</span></label>
+      <label>Rotation: <input type="range" id="rotation" min="0" max="360" value="0"> <span id="rotationValue">0</span></label>
+    </div>
 
     <div class="control-group">
       <h3>Layer Controls</h3>
@@ -107,6 +111,7 @@
     <button onclick="downloadCanvas()">Download Image (2160×2160)</button>
   </div>
 
+  <script src="presets.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
