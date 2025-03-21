@@ -164,6 +164,7 @@ document.getElementById('presetSelector').addEventListener('change', function() 
         baseScale = parseFloat(preset[key]);
         document.getElementById('scale').value = baseScale;
         document.getElementById('scaleValue').textContent = baseScale;
+        console.log(`Preset loaded: baseScale set to ${baseScale}`);
       }
     });
     saveState();
@@ -235,7 +236,8 @@ document.querySelectorAll('input, select').forEach(input => {
       if (valueSpan) valueSpan.textContent = value.toFixed(1);
     }
     if (this.id === 'scale' && !currentParams.audioReactive) {
-      baseScale = parseFloat(this.value); // Only update baseScale if not audio reactive
+      baseScale = parseFloat(this.value);
+      console.log(`Manual scale adjust: baseScale set to ${baseScale}`);
     }
     drawSpiral();
   });
@@ -324,16 +326,16 @@ function animateAudioReactive() {
 
     if (currentParams.audioScale) {
       const currentScale = parseFloat(scaleInput.value);
-      const targetScale = baseScale + (amplitude * 100);
       let newScale;
       if (amplitude > 0.05) {
+        const targetScale = baseScale + (amplitude * 100);
         newScale = Math.min(Math.max(targetScale, baseScale), 100);
       } else {
-        newScale = currentScale + (baseScale - currentScale) * 0.2;
-        if (Math.abs(newScale - baseScale) < 0.5) newScale = baseScale; // Snap closer
+        newScale = baseScale; // Force exact baseScale when silent
       }
       scaleInput.value = newScale;
       document.getElementById('scaleValue').textContent = Math.round(newScale);
+      console.log(`Audio reactive: baseScale=${baseScale}, currentScale=${currentScale}, newScale=${newScale}, amplitude=${amplitude}`);
     }
 
     if (currentParams.audioOpacity) {
@@ -352,16 +354,19 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   currentParams.audioReactive = this.checked;
   document.getElementById('audioOptions').style.display = this.checked ? 'block' : 'none';
   if (this.checked && !audioContext) {
-    baseScale = parseFloat(document.getElementById('scale').value); // Lock to current scale
+    baseScale = parseFloat(document.getElementById('scale').value);
+    console.log(`Audio reactive enabled: baseScale locked to ${baseScale}`);
     initAudio().then(() => {
       animateAudioReactive();
     });
   } else if (this.checked) {
-    baseScale = parseFloat(document.getElementById('scale').value); // Reset baseScale
+    baseScale = parseFloat(document.getElementById('scale').value);
+    console.log(`Audio reactive re-enabled: baseScale reset to ${baseScale}`);
     animateAudioReactive();
   } else {
     document.getElementById('scale').value = baseScale;
     document.getElementById('scaleValue').textContent = Math.round(baseScale);
+    console.log(`Audio reactive disabled: scale reset to baseScale=${baseScale}`);
     drawSpiral();
   }
 });
@@ -369,9 +374,9 @@ document.getElementById('audioReactive').addEventListener('change', function() {
 document.getElementById('audioScale').addEventListener('change', function() {
   currentParams.audioScale = this.checked;
   if (!this.checked) {
-    // Reset scale to baseScale when disabling audioScale
     document.getElementById('scale').value = baseScale;
     document.getElementById('scaleValue').textContent = Math.round(baseScale);
+    console.log(`Audio scale disabled: scale reset to baseScale=${baseScale}`);
   }
   drawSpiral();
 });
@@ -391,7 +396,8 @@ document.getElementById('audioOpacity').addEventListener('change', function() {
   const input = document.getElementById(id);
   input.addEventListener('input', function() {
     if (currentParams.audioReactive && id === 'scale' && !currentParams.audioScale) {
-      baseScale = parseFloat(this.value); // Only update baseScale if audioScale is off
+      baseScale = parseFloat(this.value);
+      console.log(`Manual adjust during audio reactive (audioScale off): baseScale set to ${baseScale}`);
     }
     document.getElementById(id + 'Value').textContent = id === 'opacity' ? this.value : Math.round(this.value);
     drawSpiral();
@@ -406,9 +412,8 @@ let initialScale = null;
 let touchStartTime = null;
 const TAP_THRESHOLD = 200;
 
-canvas.addEventListener('touchstart', handleTouchStart);
-canvas.addEventListener('touchmove', handleTouchMove);
-canvas.addEventListener('touchend', handleTouchEnd);
+canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false }); // Non-passive due to preventDefault
 
 function handleTouchStart(e) {
   if (document.fullscreenElement && isMobile) {
@@ -424,7 +429,7 @@ function handleTouchStart(e) {
 }
 
 function handleTouchMove(e) {
-  e.preventDefault();
+  e.preventDefault(); // Needed for pinch/rotate control
   if (e.touches.length === 2 && initialPinchDistance) {
     const currentDistance = Math.hypot(
       e.touches[0].pageX - e.touches[1].pageX,
@@ -434,7 +439,8 @@ function handleTouchMove(e) {
     const newScale = initialScale * (currentDistance / initialPinchDistance);
     scaleInput.value = Math.min(Math.max(newScale, 1), 100);
     if (!currentParams.audioReactive || !currentParams.audioScale) {
-      baseScale = parseFloat(scaleInput.value); // Update baseScale only if not audio reactive
+      baseScale = parseFloat(scaleInput.value);
+      console.log(`Pinch adjust: baseScale set to ${baseScale}`);
     }
     document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
     saveState();
