@@ -9,7 +9,6 @@ const defaultParams = {
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
   gradientStroke: true, dashEffect: false, curvedLines: false
-  // Removed audioReactive, autoRotate, etc. from defaults—they’re master settings now
 };
 let baseScale = defaultParams.scale;
 
@@ -141,7 +140,11 @@ function updateParams() {
     gradientStroke: document.getElementById('gradientStroke').checked,
     dashEffect: document.getElementById('dashEffect').checked,
     curvedLines: document.getElementById('curvedLines').checked,
-    ...masterSettings // Merge master settings
+    autoRotate: masterSettings.autoRotate,
+    audioReactive: masterSettings.audioReactive,
+    audioRotate: masterSettings.audioRotate,
+    audioScale: masterSettings.audioScale,
+    audioOpacity: masterSettings.audioOpacity
   };
 }
 
@@ -188,7 +191,7 @@ document.getElementById('presetSelector').addEventListener('change', function() 
         baseScale = parseFloat(preset[key]);
       }
     });
-    // Reapply master settings after preset load
+    // Reapply master settings to UI
     document.getElementById('autoRotate').checked = masterSettings.autoRotate;
     document.getElementById('audioReactive').checked = masterSettings.audioReactive;
     document.getElementById('audioRotate').checked = masterSettings.audioRotate;
@@ -220,7 +223,6 @@ function undo() {
       if (valueSpan) valueSpan.textContent = lastState[key];
       if (key === 'scale') baseScale = parseFloat(lastState[key]);
     });
-    // Restore master settings from current state
     masterSettings.autoRotate = document.getElementById('autoRotate').checked;
     masterSettings.audioReactive = document.getElementById('audioReactive').checked;
     masterSettings.audioRotate = document.getElementById('audioRotate').checked;
@@ -239,7 +241,6 @@ function reset() {
     if (valueSpan) valueSpan.textContent = defaultParams[key];
     if (key === 'scale') baseScale = defaultParams[key];
   });
-  // Reset master settings
   masterSettings = { autoRotate: false, audioReactive: false, audioRotate: false, audioScale: false, audioOpacity: false };
   document.getElementById('autoRotate').checked = false;
   document.getElementById('audioReactive').checked = false;
@@ -293,7 +294,7 @@ document.querySelectorAll('input, select').forEach(input => {
 // -------------------------------
 let isAnimating = false;
 function animateRotation() {
-  if (isAnimating) {
+  if (isAnimating && currentParams.autoRotate) {
     let rotationInput = document.getElementById('rotation');
     let currentRotation = parseFloat(rotationInput.value);
     currentRotation = (currentRotation + 1) % 360;
@@ -362,7 +363,7 @@ function animateAudioReactive() {
       const currentScale = parseFloat(scaleInput.value);
       const targetScale = baseScale + (amplitude * 100);
       const newScale = amplitude > 0.05 ? Math.min(Math.max(targetScale, baseScale), 100) :
-                        currentScale + (baseScale - currentScale) * 0.05; // Slower decay for precision
+                        currentScale + (baseScale - currentScale) * 0.05;
       scaleInput.value = newScale;
       document.getElementById('scaleValue').textContent = Math.round(newScale);
     }
@@ -391,6 +392,8 @@ document.getElementById('audioReactive').addEventListener('change', function() {
   } else if (isAudioAnimating) {
     baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale;
     animateAudioReactive();
+  } else {
+    drawSpiral(); // Redraw static spiral when disabling
   }
 });
 
@@ -399,14 +402,17 @@ document.getElementById('audioScale').addEventListener('change', function() {
   if (this.checked) {
     baseScale = parseFloat(document.getElementById('scale').value) || defaultParams.scale;
   }
+  drawSpiral(); // Ensure UI updates
 });
 
 document.getElementById('audioRotate').addEventListener('change', function() {
   masterSettings.audioRotate = this.checked;
+  drawSpiral(); // Ensure UI updates
 });
 
 document.getElementById('audioOpacity').addEventListener('change', function() {
   masterSettings.audioOpacity = this.checked;
+  drawSpiral(); // Ensure UI updates
 });
 
 // Allow manual adjustments during audio reactivity
@@ -458,7 +464,7 @@ function handleTouchMove(e) {
     const scaleInput = document.getElementById('scale');
     const newScale = initialScale * (currentDistance / initialPinchDistance);
     scaleInput.value = Math.min(Math.max(newScale, 1), 100);
-    baseScale = parseFloat(scaleInput.value); // Update baseScale on pinch
+    baseScale = parseFloat(scaleInput.value);
     document.getElementById('scaleValue').textContent = Math.round(scaleInput.value);
     saveState();
     drawSpiral();
