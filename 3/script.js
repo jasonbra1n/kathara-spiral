@@ -1,5 +1,5 @@
 const canvas = document.getElementById('spiralCanvas');
-const gl = canvas.getContext('webgl');
+const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
 if (!gl) throw new Error('WebGL not supported');
 
 let currentParams = {};
@@ -9,7 +9,7 @@ const defaultParams = {
   verticalMirror: false, horizontalMirror: false, strokeColor: '#00FFFF',
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
-  gradientStroke: true, dashEffect: false, curvedLines: false,
+  gradientStroke: true, dashEffect: false, curvedLines: false, taperLines: false,
   scaleGap: 10, scaleSensitivity: 1
 };
 let baseScale = defaultParams.scale;
@@ -20,12 +20,15 @@ let baseScale = defaultParams.scale;
 const vertexShaderSource = `
   attribute vec2 a_position;
   attribute float a_distance;
+  attribute float a_width;
   uniform vec2 u_resolution;
   varying float v_distance;
+  varying float v_width;
   void main() {
     vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clipSpace.x, -clipSpace.y, 0.0, 1.0);
     v_distance = a_distance;
+    v_width = a_width;
   }
 `;
 
@@ -36,13 +39,19 @@ const fragmentShaderSource = `
   uniform float u_gapSize;
   uniform int u_dashEnabled;
   uniform int u_gradientEnabled;
+  uniform int u_taperEnabled;
   uniform float u_maxDistance;
   varying float v_distance;
+  varying float v_width;
   void main() {
     vec4 color = u_color;
     if (u_gradientEnabled == 1) {
       float t = v_distance / u_maxDistance;
       color.rgb = mix(color.rgb, vec3(0.0), t);
+    }
+    if (u_taperEnabled == 1) {
+      float t = v_distance / u_maxDistance;
+      if (t > 1.0 - v_width / u_maxDistance) discard; // Simulate tapering
     }
     if (u_dashEnabled == 1 && mod(v_distance, u_dashSize + u_gapSize) > u_dashSize) discard;
     gl_FragColor = color;
@@ -75,18 +84,22 @@ gl.useProgram(program);
 
 const positionBuffer = gl.createBuffer();
 const distanceBuffer = gl.createBuffer();
+const widthBuffer = gl.createBuffer();
 const positionLocation = gl.getAttribLocation(program, 'a_position');
 const distanceLocation = gl.getAttribLocation(program, 'a_distance');
+const widthLocation = gl.getAttribLocation(program, 'a_width');
 const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
 const colorLocation = gl.getUniformLocation(program, 'u_color');
 const dashSizeLocation = gl.getUniformLocation(program, 'u_dashSize');
 const gapSizeLocation = gl.getUniformLocation(program, 'u_gapSize');
 const dashEnabledLocation = gl.getUniformLocation(program, 'u_dashEnabled');
 const gradientEnabledLocation = gl.getUniformLocation(program, 'u_gradientEnabled');
+const taperEnabledLocation = gl.getUniformLocation(program, 'u_taperEnabled');
 const maxDistanceLocation = gl.getUniformLocation(program, 'u_maxDistance');
 
 gl.enableVertexAttribArray(positionLocation);
 gl.enableVertexAttribArray(distanceLocation);
+gl.enableVertexAttribArray(widthLocation);
 
 // -------------------------------
 // Canvas Setup
@@ -163,13 +176,16 @@ function quadraticBezier(t, p0, p1, p2) {
 function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale, mirrorX, mirrorY, color) {
   const positions = [];
   const distances = [];
+  const widths = [];
   let angle = initialAngle;
   let prevX = centerX;
   let prevY = centerY;
   let totalDistance = 0;
+  const baseWidth = params.lineWidth;
 
   positions.push(centerX, centerY);
   distances.push(totalDistance);
+  widths.push(baseWidth);
 
   for (let i = 1; i < params.nodes; i++) {
     let r = params.spiralType === 'linear' ? currentScale * i : currentScale * Math.exp(0.1 * i);
@@ -182,36 +198,39 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
     if (params.curvedLines && i > 0) {
       const midX = (prevX + x) / 2;
       const midY = (prevY + y) / 2;
-      const steps = 5; // Number of points to sample for smoothness
-      for (let t = 0; t <= 1; t += 1 / steps) {
+      const steps = 5;
+      let curvePrevX = prevX;
+      let curvePrevY = prevY;
+      for (let t = 1 / steps; t <= 1; t += 1 / steps) {
         const [curveX, curveY] = quadraticBezier(t, [prevX, prevY], [midX, midY], [x, y]);
-        if (params.lineWidth > 1 && t > 0) {
-          const prevT = t - 1 / steps;
-          const [prevCurveX, prevCurveY] = quadraticBezier(prevT, [prevX, prevY], [midX, midY], [x, y]);
-          const quad = generateThickLineVertices(prevCurveX, prevCurveY, curveX, curveY, params.lineWidth);
+        const segmentLength = Math.sqrt((curveX - curvePrevX) ** 2 + (curveY - curvePrevY) ** 2);
+        totalDistance += segmentLength;
+
+        if (params.lineWidth > 1) {
+          const quad = generateThickLineVertices(curvePrevX, curvePrevY, curveX, curveY, baseWidth);
           positions.push(...quad);
-          const segmentLength = Math.sqrt((curveX - prevCurveX) ** 2 + (curveY - prevCurveY) ** 2);
-          distances.push(totalDistance, totalDistance, totalDistance + segmentLength, totalDistance + segmentLength);
-          totalDistance += segmentLength;
+          distances.push(totalDistance - segmentLength, totalDistance - segmentLength, totalDistance, totalDistance);
+          widths.push(baseWidth, baseWidth, baseWidth, baseWidth);
         } else {
           positions.push(curveX, curveY);
-          const segmentLength = t > 0 ? Math.sqrt((curveX - prevX) ** 2 + (curveY - prevY) ** 2) : 0;
-          distances.push(totalDistance + segmentLength);
-          totalDistance += segmentLength;
-          prevX = curveX;
-          prevY = curveY;
+          distances.push(totalDistance);
+          widths.push(baseWidth);
         }
+        curvePrevX = curveX;
+        curvePrevY = curveY;
       }
     } else if (params.lineWidth > 1 && i > 0) {
-      const quad = generateThickLineVertices(prevX, prevY, x, y, params.lineWidth);
+      const quad = generateThickLineVertices(prevX, prevY, x, y, baseWidth);
       positions.push(...quad);
       const segmentLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
       distances.push(totalDistance, totalDistance, totalDistance + segmentLength, totalDistance + segmentLength);
+      widths.push(baseWidth, baseWidth, baseWidth, baseWidth);
       totalDistance += segmentLength;
     } else {
       positions.push(x, y);
       const segmentLength = i > 0 ? Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2) : 0;
       distances.push(totalDistance + segmentLength);
+      widths.push(baseWidth);
       totalDistance += segmentLength;
     }
 
@@ -228,6 +247,10 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(distances), gl.STATIC_DRAW);
   gl.vertexAttribPointer(distanceLocation, 1, gl.FLOAT, false, 0, 0);
 
+  gl.bindBuffer(gl.ARRAY_BUFFER, widthBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(widths), gl.STATIC_DRAW);
+  gl.vertexAttribPointer(widthLocation, 1, gl.FLOAT, false, 0, 0);
+
   const r = parseInt(color.slice(1, 3), 16) / 255;
   const g = parseInt(color.slice(3, 5), 16) / 255;
   const b = parseInt(color.slice(5, 7), 16) / 255;
@@ -237,6 +260,7 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   gl.uniform1f(gapSizeLocation, 5.0);
   gl.uniform1i(dashEnabledLocation, params.dashEffect ? 1 : 0);
   gl.uniform1i(gradientEnabledLocation, params.gradientStroke ? 1 : 0);
+  gl.uniform1i(taperEnabledLocation, params.taperLines ? 1 : 0);
   gl.uniform1f(maxDistanceLocation, totalDistance);
 
   if (params.lineWidth > 1) {
@@ -267,6 +291,7 @@ function updateParams() {
     gradientStroke: document.getElementById('gradientStroke').checked,
     dashEffect: document.getElementById('dashEffect').checked,
     curvedLines: document.getElementById('curvedLines').checked,
+    taperLines: document.getElementById('taperLines')?.checked || false,
     autoRotate: document.getElementById('autoRotate').checked,
     audioReactive: document.getElementById('audioReactive').checked,
     audioRotate: document.getElementById('audioRotate').checked,
@@ -661,22 +686,51 @@ function downloadCanvas() {
   const downloadCanvas = document.createElement('canvas');
   downloadCanvas.width = 2160;
   downloadCanvas.height = 2160;
-  const downloadGl = downloadCanvas.getContext('webgl');
+  const downloadGl = downloadCanvas.getContext('webgl', { preserveDrawingBuffer: true });
   if (!downloadGl) throw new Error('WebGL not supported for download');
 
-  const downloadProgram = createProgram(downloadGl, vertexShader, fragmentShader);
+  const downloadVertexShader = createShader(downloadGl, downloadGl.VERTEX_SHADER, vertexShaderSource);
+  const downloadFragmentShader = createShader(downloadGl, downloadGl.FRAGMENT_SHADER, fragmentShaderSource);
+  const downloadProgram = downloadGl.createProgram();
+  downloadGl.attachShader(downloadProgram, downloadVertexShader);
+  downloadGl.attachShader(downloadProgram, downloadFragmentShader);
+  downloadGl.linkProgram(downloadProgram);
+  if (!downloadGl.getProgramParameter(downloadProgram, downloadGl.LINK_STATUS)) {
+    console.error(downloadGl.getProgramInfoLog(downloadProgram));
+  }
   downloadGl.useProgram(downloadProgram);
 
   const dlPositionBuffer = downloadGl.createBuffer();
   const dlDistanceBuffer = downloadGl.createBuffer();
-  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_position'));
-  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_distance'));
+  const dlWidthBuffer = downloadGl.createBuffer();
+  const dlPositionLocation = downloadGl.getAttribLocation(downloadProgram, 'a_position');
+  const dlDistanceLocation = downloadGl.getAttribLocation(downloadProgram, 'a_distance');
+  const dlWidthLocation = downloadGl.getAttribLocation(downloadProgram, 'a_width');
+  downloadGl.enableVertexAttribArray(dlPositionLocation);
+  downloadGl.enableVertexAttribArray(dlDistanceLocation);
+  downloadGl.enableVertexAttribArray(dlWidthLocation);
+
+  downloadGl.bindBuffer(downloadGl.ARRAY_BUFFER, dlPositionBuffer);
+  downloadGl.vertexAttribPointer(dlPositionLocation, 2, downloadGl.FLOAT, false, 0, 0);
+  downloadGl.bindBuffer(downloadGl.ARRAY_BUFFER, dlDistanceBuffer);
+  downloadGl.vertexAttribPointer(dlDistanceLocation, 1, downloadGl.FLOAT, false, 0, 0);
+  downloadGl.bindBuffer(downloadGl.ARRAY_BUFFER, dlWidthBuffer);
+  downloadGl.vertexAttribPointer(dlWidthLocation, 1, downloadGl.FLOAT, false, 0, 0);
+
+  downloadGl.uniform2f(downloadGl.getUniformLocation(downloadProgram, 'u_resolution'), downloadCanvas.width, downloadCanvas.height);
+  downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_dashSize'), 5.0);
+  downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_gapSize'), 5.0);
+  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_dashEnabled'), currentParams.dashEffect ? 1 : 0);
+  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_gradientEnabled'), currentParams.gradientStroke ? 1 : 0);
+  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_taperEnabled'), currentParams.taperLines ? 1 : 0);
 
   drawSpiralOnContext(downloadGl, downloadCanvas.width, downloadCanvas.height, currentParams);
 
+  downloadGl.finish();
+
   const link = document.createElement('a');
   link.download = 'kathara-spiral.png';
-  link.href = downloadCanvas.toDataURL();
+  link.href = downloadCanvas.toDataURL('image/png');
   link.click();
 }
 
