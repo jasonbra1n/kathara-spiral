@@ -245,11 +245,7 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   let totalDistance = 0;
   const baseWidth = params.lineWidth;
 
-  positions.push(centerX, centerY);
-  distances.push(totalDistance);
-  widths.push(baseWidth);
-  normals.push(0, 0);
-
+  // Generate vertices for each segment
   for (let i = 1; i < params.nodes; i++) {
     let r = params.spiralType === 'linear' ? currentScale * i : currentScale * Math.exp(0.1 * i);
     let x = centerX + Math.cos(angle) * r;
@@ -258,62 +254,51 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
     if (mirrorX) x = centerX * 2 - x;
     if (mirrorY) y = centerY * 2 - y;
 
-    if (params.curvedLines && i > 0) {
-      const midX = (prevX + x) / 2;
-      const midY = (prevY + y) / 2;
-      const steps = 5;
-      let curvePrevX = prevX;
-      let curvePrevY = prevY;
-      for (let t = 1 / steps; t <= 1; t += 1 / steps) {
-        const [curveX, curveY] = quadraticBezier(t, [prevX, prevY], [midX, midY], [x, y]);
-        const segmentLength = Math.sqrt((curveX - curvePrevX) ** 2 + (curveY - curvePrevY) ** 2);
-        totalDistance += segmentLength;
+    const segmentLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
+    const d_start = totalDistance;
+    const d_end = totalDistance + segmentLength;
 
-        if (params.lineWidth > 1) {
-          const isLastSegment = i === params.nodes - 1 && t >= 1 - 1 / steps;
-          const { vertices, normals: segmentNormals } = generateThickLineVertices(
-            curvePrevX, curvePrevY, curveX, curveY, baseWidth,
-            t === 1 / steps && i === 1, isLastSegment, params.lineEndStyle
-          );
-          positions.push(...vertices);
-          distances.push(totalDistance - segmentLength, totalDistance - segmentLength, totalDistance, totalDistance);
-          widths.push(baseWidth, baseWidth, baseWidth, baseWidth);
-          normals.push(...segmentNormals);
-        } else {
-          positions.push(curveX, curveY);
-          distances.push(totalDistance);
-          widths.push(baseWidth);
-          normals.push(0, 0);
-        }
-        curvePrevX = curveX;
-        curvePrevY = curveY;
-      }
-    } else if (params.lineWidth > 1 && i > 0) {
-      const isFirstSegment = i === 1;
+    if (params.lineWidth > 1) {
       const isLastSegment = i === params.nodes - 1;
       const { vertices, normals: segmentNormals } = generateThickLineVertices(
-        prevX, prevY, x, y, baseWidth, isFirstSegment, isLastSegment, params.lineEndStyle
+        prevX, prevY, x, y, baseWidth, i === 1, isLastSegment, params.lineEndStyle
       );
-      positions.push(...vertices);
-      const segmentLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
-      distances.push(totalDistance, totalDistance, totalDistance + segmentLength, totalDistance + segmentLength);
-      widths.push(baseWidth, baseWidth, baseWidth, baseWidth);
-      normals.push(...segmentNormals);
-      totalDistance += segmentLength;
+
+      // Vertices: v0 (start top), v1 (start bottom), v2 (end top), v3 (end bottom)
+      const v0 = [vertices[0], vertices[1]];
+      const v1 = [vertices[2], vertices[3]];
+      const v2 = [vertices[4], vertices[5]];
+      const v3 = [vertices[6], vertices[7]];
+      const n0 = [segmentNormals[0], segmentNormals[1]];
+      const n1 = [segmentNormals[2], segmentNormals[3]];
+      const n2 = [segmentNormals[4], segmentNormals[5]];
+      const n3 = [segmentNormals[6], segmentNormals[7]];
+
+      // Triangle 1: v0, v1, v2
+      positions.push(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1]);
+      distances.push(d_start, d_start, d_end);
+      widths.push(baseWidth, baseWidth, baseWidth);
+      normals.push(n0[0], n0[1], n1[0], n1[1], n2[0], n2[1]);
+
+      // Triangle 2: v2, v1, v3
+      positions.push(v2[0], v2[1], v1[0], v1[1], v3[0], v3[1]);
+      distances.push(d_end, d_start, d_end);
+      widths.push(baseWidth, baseWidth, baseWidth);
+      normals.push(n2[0], n2[1], n1[0], n1[1], n3[0], n3[1]);
     } else {
       positions.push(x, y);
-      const segmentLength = i > 0 ? Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2) : 0;
-      distances.push(totalDistance + segmentLength);
+      distances.push(d_end);
       widths.push(baseWidth);
       normals.push(0, 0);
-      totalDistance += segmentLength;
     }
 
+    totalDistance += segmentLength;
     prevX = x;
     prevY = y;
-    angle += Math.PI / 3;
+    angle += Math.PI / 3; // Adjust angle increment based on shape (e.g., heptagon: 2π/7)
   }
 
+  // Set up buffers
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
   gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
@@ -330,11 +315,11 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
   gl.vertexAttribPointer(normalLocation, 2, gl.FLOAT, false, 0, 0);
 
+  // Set uniforms
   const r = parseInt(color.slice(1, 3), 16) / 255;
   const g = parseInt(color.slice(3, 5), 16) / 255;
   const b = parseInt(color.slice(5, 7), 16) / 255;
   gl.uniform4f(colorLocation, r, g, b, params.opacity);
-
   gl.uniform1f(dashSizeLocation, 5.0);
   gl.uniform1f(gapSizeLocation, 5.0);
   gl.uniform1i(dashEnabledLocation, params.dashEffect ? 1 : 0);
@@ -343,11 +328,12 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   gl.uniform1f(maxDistanceLocation, totalDistance);
   gl.uniform1f(lineWidthLocation, baseWidth);
 
+  // Draw
   if (params.lineWidth > 1) {
-    const vertexCount = params.curvedLines ? (params.nodes - 1) * 5 * 4 : (params.nodes - 1) * 4;
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexCount);
+    const vertexCount = (params.nodes - 1) * 6; // 6 vertices per segment (2 triangles)
+    gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
   } else {
-    gl.drawArrays(gl.LINE_STRIP, 0, params.curvedLines ? (params.nodes - 1) * 5 + 1 : params.nodes);
+    gl.drawArrays(gl.LINE_STRIP, 0, params.nodes);
   }
 }
 
