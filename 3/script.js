@@ -113,6 +113,22 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
+// Populate preset selector from presets.js
+function populatePresetSelector() {
+  const presetSelector = document.getElementById('presetSelector');
+  presetOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.value;
+    opt.textContent = option.label;
+    presetSelector.appendChild(opt);
+  });
+}
+
+// Call this after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  populatePresetSelector();
+});
+
 // -------------------------------
 // Spiral Drawing Functions
 // -------------------------------
@@ -270,6 +286,8 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
     gl.drawArrays(gl.LINE_STRIP, 0, params.curvedLines ? (params.nodes - 1) * 5 + 1 : params.nodes);
   }
 }
+
+
 
 function updateParams() {
   currentParams = {
