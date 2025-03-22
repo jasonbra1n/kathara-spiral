@@ -9,8 +9,9 @@ const defaultParams = {
   verticalMirror: false, horizontalMirror: false, strokeColor: '#00FFFF',
   lineWidth: 2, opacity: 1, spiralType: 'linear', backgroundColor: '#111111',
   verticalColor: '#FF00FF', horizontalColor: '#FFFF00', bothColor: '#FFFFFF',
-  gradientStroke: true, dashEffect: false, curvedLines: false, taperLines: false,
-  roundedCorners: false, scaleGap: 10, scaleSensitivity: 1
+  gradientStroke: true, dashEffect: false, curvedLines: false,
+  lineEndStyle: 'boxed', // New parameter: 'boxed', 'tapered', or 'rounded'
+  scaleGap: 10, scaleSensitivity: 1
 };
 let baseScale = defaultParams.scale;
 
@@ -42,8 +43,7 @@ const fragmentShaderSource = `
   uniform float u_gapSize;
   uniform int u_dashEnabled;
   uniform int u_gradientEnabled;
-  uniform int u_taperEnabled;
-  uniform int u_roundedCorners;
+  uniform int u_lineEndStyle; // 0: boxed, 1: tapered, 2: rounded
   uniform float u_maxDistance;
   uniform float u_lineWidth;
   varying float v_distance;
@@ -55,12 +55,12 @@ const fragmentShaderSource = `
       float t = v_distance / u_maxDistance;
       color.rgb = mix(color.rgb, vec3(0.0), t);
     }
-    if (u_taperEnabled == 1) {
+    if (u_lineEndStyle == 1) { // Tapered
       float t = v_distance / u_maxDistance;
       float taperFactor = 1.0 - t;
       if (length(v_normal) > taperFactor * u_lineWidth / 2.0) discard;
     }
-    if (u_roundedCorners == 1) {
+    if (u_lineEndStyle == 2) { // Rounded
       float distFromCenter = length(v_normal);
       if (distFromCenter > u_lineWidth / 2.0) discard;
     }
@@ -107,8 +107,7 @@ const dashSizeLocation = gl.getUniformLocation(program, 'u_dashSize');
 const gapSizeLocation = gl.getUniformLocation(program, 'u_gapSize');
 const dashEnabledLocation = gl.getUniformLocation(program, 'u_dashEnabled');
 const gradientEnabledLocation = gl.getUniformLocation(program, 'u_gradientEnabled');
-const taperEnabledLocation = gl.getUniformLocation(program, 'u_taperEnabled');
-const roundedCornersLocation = gl.getUniformLocation(program, 'u_roundedCorners');
+const lineEndStyleLocation = gl.getUniformLocation(program, 'u_lineEndStyle');
 const maxDistanceLocation = gl.getUniformLocation(program, 'u_maxDistance');
 const lineWidthLocation = gl.getUniformLocation(program, 'u_lineWidth');
 
@@ -183,7 +182,7 @@ function drawSpiralOnContext(gl, width, height, params) {
   }
 }
 
-function generateThickLineVertices(startX, startY, endX, endY, width, isFirst, isLast, taperLines) {
+function generateThickLineVertices(startX, startY, endX, endY, width, isFirst, isLast, lineEndStyle) {
   const dx = endX - startX;
   const dy = endY - startY;
   const len = Math.sqrt(dx * dx + dy * dy);
@@ -193,7 +192,7 @@ function generateThickLineVertices(startX, startY, endX, endY, width, isFirst, i
   let vertices = [];
   let normals = [];
 
-  if (taperLines && isLast) {
+  if (lineEndStyle === 'tapered' && isLast) {
     // Tapered end: width reduces to 0 at the end
     vertices = [
       startX + nx, startY + ny,
@@ -208,7 +207,7 @@ function generateThickLineVertices(startX, startY, endX, endY, width, isFirst, i
       0, 0
     ];
   } else {
-    // Square corners: consistent width
+    // Boxed or rounded: consistent width
     vertices = [
       startX + nx, startY + ny,
       startX - nx, startY - ny,
@@ -274,7 +273,7 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
           const isLastSegment = i === params.nodes - 1 && t >= 1 - 1 / steps;
           const { vertices, normals: segmentNormals } = generateThickLineVertices(
             curvePrevX, curvePrevY, curveX, curveY, baseWidth,
-            t === 1 / steps && i === 1, isLastSegment, params.taperLines
+            t === 1 / steps && i === 1, isLastSegment, params.lineEndStyle
           );
           positions.push(...vertices);
           distances.push(totalDistance - segmentLength, totalDistance - segmentLength, totalDistance, totalDistance);
@@ -293,7 +292,7 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
       const isFirstSegment = i === 1;
       const isLastSegment = i === params.nodes - 1;
       const { vertices, normals: segmentNormals } = generateThickLineVertices(
-        prevX, prevY, x, y, baseWidth, isFirstSegment, isLastSegment, params.taperLines
+        prevX, prevY, x, y, baseWidth, isFirstSegment, isLastSegment, params.lineEndStyle
       );
       positions.push(...vertices);
       const segmentLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
@@ -340,8 +339,7 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   gl.uniform1f(gapSizeLocation, 5.0);
   gl.uniform1i(dashEnabledLocation, params.dashEffect ? 1 : 0);
   gl.uniform1i(gradientEnabledLocation, params.gradientStroke ? 1 : 0);
-  gl.uniform1i(taperEnabledLocation, params.taperLines ? 1 : 0);
-  gl.uniform1i(roundedCornersLocation, params.roundedCorners ? 1 : 0);
+  gl.uniform1i(lineEndStyleLocation, params.lineEndStyle === 'boxed' ? 0 : params.lineEndStyle === 'tapered' ? 1 : 2);
   gl.uniform1f(maxDistanceLocation, totalDistance);
   gl.uniform1f(lineWidthLocation, baseWidth);
 
@@ -373,8 +371,7 @@ function updateParams() {
     gradientStroke: document.getElementById('gradientStroke').checked,
     dashEffect: document.getElementById('dashEffect').checked,
     curvedLines: document.getElementById('curvedLines').checked,
-    taperLines: document.getElementById('taperLines')?.checked || false,
-    roundedCorners: document.getElementById('roundedCorners')?.checked || false,
+    lineEndStyle: document.getElementById('lineEndStyle').value,
     autoRotate: document.getElementById('autoRotate').checked,
     audioReactive: document.getElementById('audioReactive').checked,
     audioRotate: document.getElementById('audioRotate').checked,
@@ -810,8 +807,7 @@ function downloadCanvas() {
   downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_gapSize'), 5.0);
   downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_dashEnabled'), currentParams.dashEffect ? 1 : 0);
   downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_gradientEnabled'), currentParams.gradientStroke ? 1 : 0);
-  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_taperEnabled'), currentParams.taperLines ? 1 : 0);
-  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_roundedCorners'), currentParams.roundedCorners ? 1 : 0);
+  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_lineEndStyle'), currentParams.lineEndStyle === 'boxed' ? 0 : currentParams.lineEndStyle === 'tapered' ? 1 : 2);
   downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_lineWidth'), currentParams.lineWidth);
 
   drawSpiralOnContext(downloadGl, downloadCanvas.width, downloadCanvas.height, currentParams);
