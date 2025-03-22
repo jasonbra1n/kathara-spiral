@@ -1,5 +1,6 @@
 const canvas = document.getElementById('spiralCanvas');
-const ctx = canvas.getContext('2d');
+const gl = canvas.getContext('webgl');
+if (!gl) throw new Error('WebGL not supported');
 
 let currentParams = {};
 let history = [];
@@ -14,11 +15,77 @@ const defaultParams = {
 let baseScale = defaultParams.scale;
 
 // -------------------------------
+// WebGL Setup
+// -------------------------------
+const vertexShaderSource = `
+  attribute vec2 a_position;
+  attribute float a_distance;
+  uniform vec2 u_resolution;
+  varying float v_distance;
+  void main() {
+    vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
+    gl_Position = vec4(clipSpace.x, -clipSpace.y, 0.0, 1.0);
+    v_distance = a_distance;
+  }
+`;
+
+const fragmentShaderSource = `
+  precision mediump float;
+  uniform vec4 u_color;
+  uniform float u_dashSize;
+  uniform float u_gapSize;
+  uniform int u_dashEnabled;
+  varying float v_distance;
+  void main() {
+    if (u_dashEnabled == 1 && mod(v_distance, u_dashSize + u_gapSize) > u_dashSize) discard;
+    gl_FragColor = u_color;
+  }
+`;
+
+function createShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+const program = gl.createProgram();
+gl.attachShader(program, vertexShader);
+gl.attachShader(program, fragmentShader);
+gl.linkProgram(program);
+if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+  console.error(gl.getProgramInfoLog(program));
+}
+gl.useProgram(program);
+
+const positionBuffer = gl.createBuffer();
+const distanceBuffer = gl.createBuffer();
+const positionLocation = gl.getAttribLocation(program, 'a_position');
+const distanceLocation = gl.getAttribLocation(program, 'a_distance');
+const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+const colorLocation = gl.getUniformLocation(program, 'u_color');
+const dashSizeLocation = gl.getUniformLocation(program, 'u_dashSize');
+const gapSizeLocation = gl.getUniformLocation(program, 'u_gapSize');
+const dashEnabledLocation = gl.getUniformLocation(program, 'u_dashEnabled');
+
+gl.enableVertexAttribArray(positionLocation);
+gl.enableVertexAttribArray(distanceLocation);
+
+// -------------------------------
 // Canvas Setup
 // -------------------------------
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
   drawSpiral();
 }
 window.addEventListener('resize', resizeCanvas);
@@ -27,14 +94,17 @@ resizeCanvas();
 // -------------------------------
 // Spiral Drawing Functions
 // -------------------------------
-function drawSpiralOnContext(context, width, height, params) {
-  context.fillStyle = params.backgroundColor;
-  context.fillRect(0, 0, width, height);
-  context.save();
+function drawSpiralOnContext(gl, width, height, params) {
+  const bg = params.backgroundColor;
+  gl.clearColor(
+    parseInt(bg.slice(1, 3), 16) / 255,
+    parseInt(bg.slice(3, 5), 16) / 255,
+    parseInt(bg.slice(5, 7), 16) / 255,
+    1.0
+  );
+  gl.clear(gl.COLOR_BUFFER_BIT);
 
-  context.lineWidth = params.lineWidth;
-  context.globalAlpha = params.opacity;
-  if (params.dashEffect) context.setLineDash([5, 5]); else context.setLineDash([]);
+  gl.uniform2f(resolutionLocation, width, height);
 
   const centerX = width / 2;
   const centerY = height / 2;
@@ -43,54 +113,62 @@ function drawSpiralOnContext(context, width, height, params) {
     const currentScale = params.scale * Math.pow(params.layerRatio / 5, l);
     const initialAngle = (params.rotation + (l * 10)) * (Math.PI / 180);
 
-    drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, false, false, params.strokeColor);
+    drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale, false, false, params.strokeColor);
     if (params.verticalMirror || params.horizontalMirror) {
       if (params.verticalMirror && params.horizontalMirror) {
-        drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, true, true, params.bothColor);
+        drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale, true, true, params.bothColor);
       }
       if (params.verticalMirror) {
-        drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, true, false, params.verticalColor);
+        drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale, true, false, params.verticalColor);
       }
       if (params.horizontalMirror) {
-        drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, false, true, params.horizontalColor);
+        drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale, false, true, params.horizontalColor);
       }
     }
   }
-  context.restore();
 }
 
-function drawSpiralPath(context, centerX, centerY, params, initialAngle, currentScale, mirrorX, mirrorY, color) {
-  context.beginPath();
-  if (params.gradientStroke) {
-    const gradient = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, currentScale * params.nodes);
-    gradient.addColorStop(0, color);
-    gradient.addColorStop(1, '#000000');
-    context.strokeStyle = gradient;
-  } else {
-    context.strokeStyle = color;
-  }
+function generateThickLineVertices(startX, startY, endX, endY, width) {
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const nx = dy / len * width / 2;
+  const ny = -dx / len * width / 2;
+  return [
+    startX + nx, startY + ny,
+    startX - nx, startY - ny,
+    endX + nx, endY + ny,
+    endX - nx, endY - ny
+  ];
+}
 
+function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale, mirrorX, mirrorY, color) {
+  const positions = [];
+  const distances = [];
   let angle = initialAngle;
-  const spiralType = params.spiralType;
   let prevX = centerX;
   let prevY = centerY;
+  let totalDistance = 0;
 
-  context.moveTo(prevX, prevY);
-
-  for (let i = 1; i < params.nodes; i++) {
-    let r = spiralType === 'linear' ? currentScale * i : currentScale * Math.exp(0.1 * i);
+  for (let i = 0; i < params.nodes; i++) {
+    let r = params.spiralType === 'linear' ? currentScale * i : currentScale * Math.exp(0.1 * i);
     let x = centerX + Math.cos(angle) * r;
     let y = centerY + Math.sin(angle) * r;
 
     if (mirrorX) x = centerX * 2 - x;
     if (mirrorY) y = centerY * 2 - y;
 
-    if (params.curvedLines) {
-      const midX = (prevX + x) / 2;
-      const midY = (prevY + y) / 2;
-      context.quadraticCurveTo(prevX, prevY, midX, midY);
+    if (i > 0 && params.lineWidth > 1) {
+      const quad = generateThickLineVertices(prevX, prevY, x, y, params.lineWidth);
+      positions.push(...quad);
+      const segmentLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
+      distances.push(totalDistance, totalDistance, totalDistance + segmentLength, totalDistance + segmentLength);
+      totalDistance += segmentLength;
     } else {
-      context.lineTo(x, y);
+      positions.push(x, y);
+      const segmentLength = i > 0 ? Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2) : 0;
+      distances.push(totalDistance);
+      totalDistance += segmentLength;
     }
 
     prevX = x;
@@ -98,7 +176,29 @@ function drawSpiralPath(context, centerX, centerY, params, initialAngle, current
     angle += Math.PI / 3;
   }
 
-  context.stroke();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, distanceBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(distances), gl.STATIC_DRAW);
+  gl.vertexAttribPointer(distanceLocation, 1, gl.FLOAT, false, 0, 0);
+
+  const r = parseInt(color.slice(1, 3), 16) / 255;
+  const g = parseInt(color.slice(3, 5), 16) / 255;
+  const b = parseInt(color.slice(5, 7), 16) / 255;
+  gl.uniform4f(colorLocation, r, g, b, params.opacity);
+
+  gl.uniform1f(dashSizeLocation, 5.0);
+  gl.uniform1f(gapSizeLocation, 5.0);
+  gl.uniform1i(dashEnabledLocation, params.dashEffect ? 1 : 0);
+
+  if (params.lineWidth > 1) {
+    const vertexCount = (params.nodes - 1) * 4;
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexCount);
+  } else {
+    gl.drawArrays(gl.LINE_STRIP, 0, params.nodes);
+  }
 }
 
 function updateParams() {
@@ -133,7 +233,7 @@ function updateParams() {
 
 function drawSpiral() {
   updateParams();
-  drawSpiralOnContext(ctx, canvas.width, canvas.height, currentParams);
+  drawSpiralOnContext(gl, canvas.width, canvas.height, currentParams);
 }
 
 // -------------------------------
@@ -515,8 +615,18 @@ function downloadCanvas() {
   const downloadCanvas = document.createElement('canvas');
   downloadCanvas.width = 2160;
   downloadCanvas.height = 2160;
-  const downloadCtx = downloadCanvas.getContext('2d');
-  drawSpiralOnContext(downloadCtx, downloadCanvas.width, downloadCanvas.height, currentParams);
+  const downloadGl = downloadCanvas.getContext('webgl');
+  if (!downloadGl) throw new Error('WebGL not supported for download');
+
+  const downloadProgram = createProgram(downloadGl, vertexShader, fragmentShader);
+  downloadGl.useProgram(downloadProgram);
+
+  const dlPositionBuffer = downloadGl.createBuffer();
+  const dlDistanceBuffer = downloadGl.createBuffer();
+  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_position'));
+  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_distance'));
+
+  drawSpiralOnContext(downloadGl, downloadCanvas.width, downloadCanvas.height, currentParams);
 
   const link = document.createElement('a');
   link.download = 'kathara-spiral.png';
