@@ -113,7 +113,9 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// Populate preset selector from presets.js
+// -------------------------------
+// Populate Preset Selector
+// -------------------------------
 function populatePresetSelector() {
   const presetSelector = document.getElementById('presetSelector');
   presetOptions.forEach(option => {
@@ -124,7 +126,6 @@ function populatePresetSelector() {
   });
 }
 
-// Call this after DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   populatePresetSelector();
 });
@@ -286,8 +287,6 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
     gl.drawArrays(gl.LINE_STRIP, 0, params.curvedLines ? (params.nodes - 1) * 5 + 1 : params.nodes);
   }
 }
-
-
 
 function updateParams() {
   currentParams = {
