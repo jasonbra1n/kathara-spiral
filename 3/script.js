@@ -1,5 +1,5 @@
 const canvas = document.getElementById('spiralCanvas');
-const gl = canvas.getContext('webgl');
+const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true }); // Enable buffer preservation
 if (!gl) throw new Error('WebGL not supported');
 
 let currentParams = {};
@@ -35,10 +35,17 @@ const fragmentShaderSource = `
   uniform float u_dashSize;
   uniform float u_gapSize;
   uniform int u_dashEnabled;
+  uniform int u_gradientEnabled;
+  uniform float u_maxDistance;
   varying float v_distance;
   void main() {
+    vec4 color = u_color;
+    if (u_gradientEnabled == 1) {
+      float t = v_distance / u_maxDistance;
+      color.rgb = mix(color.rgb, vec3(0.0), t);
+    }
     if (u_dashEnabled == 1 && mod(v_distance, u_dashSize + u_gapSize) > u_dashSize) discard;
-    gl_FragColor = u_color;
+    gl_FragColor = color;
   }
 `;
 
@@ -75,6 +82,8 @@ const colorLocation = gl.getUniformLocation(program, 'u_color');
 const dashSizeLocation = gl.getUniformLocation(program, 'u_dashSize');
 const gapSizeLocation = gl.getUniformLocation(program, 'u_gapSize');
 const dashEnabledLocation = gl.getUniformLocation(program, 'u_dashEnabled');
+const gradientEnabledLocation = gl.getUniformLocation(program, 'u_gradientEnabled');
+const maxDistanceLocation = gl.getUniformLocation(program, 'u_maxDistance');
 
 gl.enableVertexAttribArray(positionLocation);
 gl.enableVertexAttribArray(distanceLocation);
@@ -142,6 +151,15 @@ function generateThickLineVertices(startX, startY, endX, endY, width) {
   ];
 }
 
+function quadraticBezier(t, p0, p1, p2) {
+  const u = 1 - t;
+  const tt = t * t;
+  const uu = u * u;
+  const x = uu * p0[0] + 2 * u * t * p1[0] + tt * p2[0];
+  const y = uu * p0[1] + 2 * u * t * p1[1] + tt * p2[1];
+  return [x, y];
+}
+
 function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale, mirrorX, mirrorY, color) {
   const positions = [];
   const distances = [];
@@ -150,7 +168,10 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   let prevY = centerY;
   let totalDistance = 0;
 
-  for (let i = 0; i < params.nodes; i++) {
+  positions.push(centerX, centerY);
+  distances.push(totalDistance);
+
+  for (let i = 1; i < params.nodes; i++) {
     let r = params.spiralType === 'linear' ? currentScale * i : currentScale * Math.exp(0.1 * i);
     let x = centerX + Math.cos(angle) * r;
     let y = centerY + Math.sin(angle) * r;
@@ -158,7 +179,30 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
     if (mirrorX) x = centerX * 2 - x;
     if (mirrorY) y = centerY * 2 - y;
 
-    if (i > 0 && params.lineWidth > 1) {
+    if (params.curvedLines && i > 0) {
+      const midX = (prevX + x) / 2;
+      const midY = (prevY + y) / 2;
+      const steps = 5;
+      for (let t = 0; t <= 1; t += 1 / steps) {
+        const [curveX, curveY] = quadraticBezier(t, [prevX, prevY], [midX, midY], [x, y]);
+        if (params.lineWidth > 1 && t > 0) {
+          const prevT = t - 1 / steps;
+          const [prevCurveX, prevCurveY] = quadraticBezier(prevT, [prevX, prevY], [midX, midY], [x, y]);
+          const quad = generateThickLineVertices(prevCurveX, prevCurveY, curveX, curveY, params.lineWidth);
+          positions.push(...quad);
+          const segmentLength = Math.sqrt((curveX - prevCurveX) ** 2 + (curveY - prevCurveY) ** 2);
+          distances.push(totalDistance, totalDistance, totalDistance + segmentLength, totalDistance + segmentLength);
+          totalDistance += segmentLength;
+        } else {
+          positions.push(curveX, curveY);
+          const segmentLength = t > 0 ? Math.sqrt((curveX - prevX) ** 2 + (curveY - prevY) ** 2) : 0;
+          distances.push(totalDistance + segmentLength);
+          totalDistance += segmentLength;
+          prevX = curveX;
+          prevY = curveY;
+        }
+      }
+    } else if (params.lineWidth > 1 && i > 0) {
       const quad = generateThickLineVertices(prevX, prevY, x, y, params.lineWidth);
       positions.push(...quad);
       const segmentLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
@@ -167,7 +211,7 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
     } else {
       positions.push(x, y);
       const segmentLength = i > 0 ? Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2) : 0;
-      distances.push(totalDistance);
+      distances.push(totalDistance + segmentLength);
       totalDistance += segmentLength;
     }
 
@@ -192,12 +236,14 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
   gl.uniform1f(dashSizeLocation, 5.0);
   gl.uniform1f(gapSizeLocation, 5.0);
   gl.uniform1i(dashEnabledLocation, params.dashEffect ? 1 : 0);
+  gl.uniform1i(gradientEnabledLocation, params.gradientStroke ? 1 : 0);
+  gl.uniform1f(maxDistanceLocation, totalDistance);
 
   if (params.lineWidth > 1) {
-    const vertexCount = (params.nodes - 1) * 4;
+    const vertexCount = params.curvedLines ? (params.nodes - 1) * 5 * 4 : (params.nodes - 1) * 4;
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexCount);
   } else {
-    gl.drawArrays(gl.LINE_STRIP, 0, params.nodes);
+    gl.drawArrays(gl.LINE_STRIP, 0, params.curvedLines ? (params.nodes - 1) * 5 + 1 : params.nodes);
   }
 }
 
@@ -615,22 +661,51 @@ function downloadCanvas() {
   const downloadCanvas = document.createElement('canvas');
   downloadCanvas.width = 2160;
   downloadCanvas.height = 2160;
-  const downloadGl = downloadCanvas.getContext('webgl');
+  const downloadGl = downloadCanvas.getContext('webgl', { preserveDrawingBuffer: true });
   if (!downloadGl) throw new Error('WebGL not supported for download');
 
-  const downloadProgram = createProgram(downloadGl, vertexShader, fragmentShader);
+  // Create and link shaders for download context
+  const downloadVertexShader = createShader(downloadGl, downloadGl.VERTEX_SHADER, vertexShaderSource);
+  const downloadFragmentShader = createShader(downloadGl, downloadGl.FRAGMENT_SHADER, fragmentShaderSource);
+  const downloadProgram = downloadGl.createProgram();
+  downloadGl.attachShader(downloadProgram, downloadVertexShader);
+  downloadGl.attachShader(downloadProgram, downloadFragmentShader);
+  downloadGl.linkProgram(downloadProgram);
+  if (!downloadGl.getProgramParameter(downloadProgram, downloadGl.LINK_STATUS)) {
+    console.error(downloadGl.getProgramInfoLog(downloadProgram));
+  }
   downloadGl.useProgram(downloadProgram);
 
+  // Set up buffers and attributes
   const dlPositionBuffer = downloadGl.createBuffer();
   const dlDistanceBuffer = downloadGl.createBuffer();
-  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_position'));
-  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_distance'));
+  const dlPositionLocation = downloadGl.getAttribLocation(downloadProgram, 'a_position');
+  const dlDistanceLocation = downloadGl.getAttribLocation(downloadProgram, 'a_distance');
+  downloadGl.enableVertexAttribArray(dlPositionLocation);
+  downloadGl.enableVertexAttribArray(dlDistanceLocation);
 
+  downloadGl.bindBuffer(downloadGl.ARRAY_BUFFER, dlPositionBuffer);
+  downloadGl.vertexAttribPointer(dlPositionLocation, 2, downloadGl.FLOAT, false, 0, 0);
+  downloadGl.bindBuffer(downloadGl.ARRAY_BUFFER, dlDistanceBuffer);
+  downloadGl.vertexAttribPointer(dlDistanceLocation, 1, downloadGl.FLOAT, false, 0, 0);
+
+  // Set uniforms
+  downloadGl.uniform2f(downloadGl.getUniformLocation(downloadProgram, 'u_resolution'), downloadCanvas.width, downloadCanvas.height);
+  downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_dashSize'), 5.0);
+  downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_gapSize'), 5.0);
+  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_dashEnabled'), currentParams.dashEffect ? 1 : 0);
+  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_gradientEnabled'), currentParams.gradientStroke ? 1 : 0);
+
+  // Render the spiral
   drawSpiralOnContext(downloadGl, downloadCanvas.width, downloadCanvas.height, currentParams);
 
+  // Ensure rendering is complete before export
+  downloadGl.finish();
+
+  // Export as PNG
   const link = document.createElement('a');
   link.download = 'kathara-spiral.png';
-  link.href = downloadCanvas.toDataURL();
+  link.href = downloadCanvas.toDataURL('image/png');
   link.click();
 }
 
