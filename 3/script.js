@@ -1,5 +1,5 @@
 const canvas = document.getElementById('spiralCanvas');
-const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true }); // Enable buffer preservation
+const gl = canvas.getContext('webgl');
 if (!gl) throw new Error('WebGL not supported');
 
 let currentParams = {};
@@ -182,7 +182,7 @@ function drawSpiralPath(gl, centerX, centerY, params, initialAngle, currentScale
     if (params.curvedLines && i > 0) {
       const midX = (prevX + x) / 2;
       const midY = (prevY + y) / 2;
-      const steps = 5;
+      const steps = 5; // Number of points to sample for smoothness
       for (let t = 0; t <= 1; t += 1 / steps) {
         const [curveX, curveY] = quadraticBezier(t, [prevX, prevY], [midX, midY], [x, y]);
         if (params.lineWidth > 1 && t > 0) {
@@ -661,51 +661,22 @@ function downloadCanvas() {
   const downloadCanvas = document.createElement('canvas');
   downloadCanvas.width = 2160;
   downloadCanvas.height = 2160;
-  const downloadGl = downloadCanvas.getContext('webgl', { preserveDrawingBuffer: true });
+  const downloadGl = downloadCanvas.getContext('webgl');
   if (!downloadGl) throw new Error('WebGL not supported for download');
 
-  // Create and link shaders for download context
-  const downloadVertexShader = createShader(downloadGl, downloadGl.VERTEX_SHADER, vertexShaderSource);
-  const downloadFragmentShader = createShader(downloadGl, downloadGl.FRAGMENT_SHADER, fragmentShaderSource);
-  const downloadProgram = downloadGl.createProgram();
-  downloadGl.attachShader(downloadProgram, downloadVertexShader);
-  downloadGl.attachShader(downloadProgram, downloadFragmentShader);
-  downloadGl.linkProgram(downloadProgram);
-  if (!downloadGl.getProgramParameter(downloadProgram, downloadGl.LINK_STATUS)) {
-    console.error(downloadGl.getProgramInfoLog(downloadProgram));
-  }
+  const downloadProgram = createProgram(downloadGl, vertexShader, fragmentShader);
   downloadGl.useProgram(downloadProgram);
 
-  // Set up buffers and attributes
   const dlPositionBuffer = downloadGl.createBuffer();
   const dlDistanceBuffer = downloadGl.createBuffer();
-  const dlPositionLocation = downloadGl.getAttribLocation(downloadProgram, 'a_position');
-  const dlDistanceLocation = downloadGl.getAttribLocation(downloadProgram, 'a_distance');
-  downloadGl.enableVertexAttribArray(dlPositionLocation);
-  downloadGl.enableVertexAttribArray(dlDistanceLocation);
+  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_position'));
+  downloadGl.enableVertexAttribArray(downloadGl.getAttribLocation(downloadProgram, 'a_distance'));
 
-  downloadGl.bindBuffer(downloadGl.ARRAY_BUFFER, dlPositionBuffer);
-  downloadGl.vertexAttribPointer(dlPositionLocation, 2, downloadGl.FLOAT, false, 0, 0);
-  downloadGl.bindBuffer(downloadGl.ARRAY_BUFFER, dlDistanceBuffer);
-  downloadGl.vertexAttribPointer(dlDistanceLocation, 1, downloadGl.FLOAT, false, 0, 0);
-
-  // Set uniforms
-  downloadGl.uniform2f(downloadGl.getUniformLocation(downloadProgram, 'u_resolution'), downloadCanvas.width, downloadCanvas.height);
-  downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_dashSize'), 5.0);
-  downloadGl.uniform1f(downloadGl.getUniformLocation(downloadProgram, 'u_gapSize'), 5.0);
-  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_dashEnabled'), currentParams.dashEffect ? 1 : 0);
-  downloadGl.uniform1i(downloadGl.getUniformLocation(downloadProgram, 'u_gradientEnabled'), currentParams.gradientStroke ? 1 : 0);
-
-  // Render the spiral
   drawSpiralOnContext(downloadGl, downloadCanvas.width, downloadCanvas.height, currentParams);
 
-  // Ensure rendering is complete before export
-  downloadGl.finish();
-
-  // Export as PNG
   const link = document.createElement('a');
   link.download = 'kathara-spiral.png';
-  link.href = downloadCanvas.toDataURL('image/png');
+  link.href = downloadCanvas.toDataURL();
   link.click();
 }
 
